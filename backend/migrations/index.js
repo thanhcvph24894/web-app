@@ -6,9 +6,6 @@ const Category = require('./002_create_categories');
 const Product = require('./003_create_products');
 const Order = require('./004_create_orders');
 const Cart = require('./005_create_carts');
-const Wishlist = require('./006_create_wishlists');
-const Coupon = require('./007_create_coupons');
-const Setting = require('./008_create_settings');
 
 const hashPassword = async (password) => {
     const salt = await bcrypt.genSalt(10);
@@ -88,24 +85,6 @@ const runMigrations = async () => {
             }
         }
         console.log('Đã tạo người dùng mẫu');
-
-        // Tạo cài đặt mặc định
-        const settings = await Setting.findOne();
-        if (!settings) {
-            await Setting.create({
-                siteName: 'Shop Quần Áo',
-                email: 'contact@example.com',
-                phone: '0123456789',
-                address: '123 Đường ABC, Quận 1, TP.HCM',
-                facebook: 'https://facebook.com/shopquanao',
-                instagram: 'https://instagram.com/shopquanao',
-                youtube: 'https://youtube.com/shopquanao',
-                zalo: 'https://zalo.me/shopquanao',
-                shippingPrice: 30000,
-                freeShippingThreshold: 500000
-            });
-            console.log('Đã tạo cài đặt mặc định');
-        }
 
         // Tạo danh mục mặc định
         const categories = await Category.find();
@@ -247,50 +226,6 @@ const runMigrations = async () => {
             console.log('Đã tạo sản phẩm mẫu');
         }
 
-        // Tạo mã giảm giá mẫu
-        const coupons = await Coupon.find();
-        if (coupons.length === 0) {
-            const sampleCoupons = [
-                {
-                    code: 'WELCOME10',
-                    description: 'Giảm 10% cho đơn hàng đầu tiên',
-                    discountType: 'Phần trăm',
-                    discountValue: 10,
-                    minOrderValue: 200000,
-                    maxDiscount: 500000,
-                    startDate: new Date(),
-                    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    usageLimit: 100
-                },
-                {
-                    code: 'FREESHIP',
-                    description: 'Miễn phí vận chuyển',
-                    discountType: 'Số tiền',
-                    discountValue: 30000,
-                    minOrderValue: 500000,
-                    startDate: new Date(),
-                    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    usageLimit: 200
-                },
-                {
-                    code: 'SUMMER20',
-                    description: 'Giảm 20% cho mùa hè',
-                    discountType: 'Phần trăm',
-                    discountValue: 20,
-                    minOrderValue: 1000000,
-                    maxDiscount: 2000000,
-                    startDate: new Date(),
-                    endDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
-                    usageLimit: 50
-                }
-            ];
-
-            for (const coupon of sampleCoupons) {
-                await Coupon.create(coupon);
-            }
-            console.log('Đã tạo mã giảm giá mẫu');
-        }
-
         // Tạo đơn hàng mẫu
         const existingOrders = await Order.find();
         if (existingOrders.length === 0) {
@@ -388,29 +323,6 @@ const runMigrations = async () => {
             }
             console.log('Đã tạo giỏ hàng mẫu');
         }
-
-        // Tạo danh sách yêu thích mẫu
-        const wishlists = await Wishlist.find();
-        if (wishlists.length === 0) {
-            const users = await User.find({ role: 'user' });
-            const products = await Product.find();
-            const sampleWishlists = [
-                {
-                    user: users[0]._id,
-                    products: [products[0]._id, products[1]._id]
-                },
-                {
-                    user: users[1]._id,
-                    products: [products[2]._id]
-                }
-            ];
-
-            for (const wishlist of sampleWishlists) {
-                await Wishlist.create(wishlist);
-            }
-            console.log('Đã tạo danh sách yêu thích mẫu');
-        }
-
         console.log('Migration hoàn tất');
         process.exit(0);
     } catch (error) {
