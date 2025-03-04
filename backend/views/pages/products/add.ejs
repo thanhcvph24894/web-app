@@ -1,0 +1,118 @@
+<%- include('../../layouts/main') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Thêm sản phẩm mới</h1>
+    <a href="/products" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Quay lại
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form action="/products/add" method="POST" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Tên sản phẩm</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="slug" class="form-label">Slug</label>
+                        <input type="text" class="form-control" id="slug" name="slug" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Danh mục</label>
+                        <select class="form-select" id="category" name="category" required>
+                            <option value="">Chọn danh mục</option>
+                            <% categories.forEach(category => { %>
+                                <option value="<%= category._id %>"><%= category.name %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="price" class="form-label">Giá</label>
+                        <input type="number" class="form-control" id="price" name="price" min="0" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="stock" class="form-label">Tồn kho</label>
+                        <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="description" name="description" rows="5"></textarea>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label for="images" class="form-label">Hình ảnh</label>
+                        <input type="file" class="form-control" id="images" name="images" multiple accept="image/*">
+                        <div id="imagePreview" class="mt-2"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="active">Đang bán</option>
+                            <option value="inactive">Ngừng bán</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="featured" class="form-label">Sản phẩm nổi bật</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="featured" name="featured">
+                            <label class="form-check-label" for="featured">
+                                Hiển thị trên trang chủ
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Lưu sản phẩm
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('images').addEventListener('change', function(e) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+    
+    for (let i = 0; i < this.files.length; i++) {
+        const file = this.files[i];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.objectFit = 'cover';
+            img.style.margin = '5px';
+            preview.appendChild(img);
+        }
+        
+        reader.readAsDataURL(file);
+    }
+});
+
+// Tự động tạo slug từ tên sản phẩm
+document.getElementById('name').addEventListener('input', function(e) {
+    const slug = e.target.value
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+    document.getElementById('slug').value = slug;
+});
+</script> 

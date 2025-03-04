@@ -1,0 +1,79 @@
+<%- include('../../layouts/main') %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">Quản lý sản phẩm</h1>
+    <a href="/products/add" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Thêm sản phẩm
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Hình ảnh</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Danh mục</th>
+                        <th>Giá</th>
+                        <th>Tồn kho</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% products.forEach(product => { %>
+                        <tr>
+                            <td>
+                                <% if (product.images && product.images.length > 0) { %>
+                                    <img src="<%= product.images[0] %>" alt="<%= product.name %>" style="width: 50px; height: 50px; object-fit: cover;">
+                                <% } else { %>
+                                    <img src="/images/no-image.jpg" alt="No image" style="width: 50px; height: 50px; object-fit: cover;">
+                                <% } %>
+                            </td>
+                            <td><%= product.name %></td>
+                            <td><%= product.category ? product.category.name : 'N/A' %></td>
+                            <td><%= product.price.toLocaleString('vi-VN') %>đ</td>
+                            <td><%= product.stock %></td>
+                            <td>
+                                <span class="badge bg-<%= product.status === 'active' ? 'success' : 'danger' %>">
+                                    <%= product.status === 'active' ? 'Đang bán' : 'Ngừng bán' %>
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/products/edit/<%= product._id %>" class="btn btn-sm btn-info">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-danger delete-product" data-id="<%= product._id %>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa sản phẩm này?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Xóa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div> 
