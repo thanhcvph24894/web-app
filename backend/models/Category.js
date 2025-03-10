@@ -19,10 +19,9 @@ const categorySchema = new mongoose.Schema({
         default: null
     },
     image: String,
-    status: {
-        type: String,
-        enum: ['active', 'inactive'],
-        default: 'active'
+    isActive: {
+        type: Boolean,
+        default: true
     },
     order: {
         type: Number,

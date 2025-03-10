@@ -16,11 +16,18 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log('Đã kết nối database'))
 .catch(err => console.error('Lỗi kết nối database:', err));
 
-// Cấu hình EJS
+// Xử lý lỗi mongoose
+mongoose.connection.on('error', err => {
+    console.error('Lỗi database:', err);
+});
+
+// Cấu hình EJS và Express Layouts
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/main');
+app.set("layout extractScripts", true);
+app.set("layout extractStyles", true);
 
 // Middleware
 app.use(express.json());
@@ -50,12 +57,53 @@ app.use((req, res, next) => {
 // Routes
 app.use('/', require('./routes/index'));
 
+// 404 handler
+app.use((req, res) => {
+    res.status(404).render('pages/error', {
+        title: 'Không tìm thấy trang',
+        message: 'Trang bạn yêu cầu không tồn tại',
+        error: {
+            status: 404,
+            stack: process.env.NODE_ENV === 'development' ? 'Page Not Found' : ''
+        }
+    });
+});
+
 // Error handler
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).render('pages/error', {
-        title: 'Lỗi',
-        message: 'Đã xảy ra lỗi khi xử lý yêu cầu'
+    console.error('Lỗi ứng dụng:', err);
+
+    // Xử lý lỗi multer
+    if (err.name === 'MulterError') {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            req.flash('error', 'File quá lớn. Kích thước tối đa là 5MB');
+        } else {
+            req.flash('error', 'Lỗi khi upload file: ' + err.message);
+        }
+        return res.redirect('back');
+    }
+
+    // Xử lý lỗi mongoose
+    if (err.name === 'ValidationError') {
+        const messages = Object.values(err.errors).map(e => e.message);
+        req.flash('error', messages.join(', '));
+        return res.redirect('back');
+    }
+
+    if (err.name === 'CastError') {
+        req.flash('error', 'ID không hợp lệ');
+        return res.redirect('back');
+    }
+
+    // Xử lý lỗi chung
+    const statusCode = err.status || 500;
+    res.status(statusCode).render('pages/error', {
+        title: 'Lỗi hệ thống',
+        message: process.env.NODE_ENV === 'development' ? err.message : 'Đã xảy ra lỗi khi xử lý yêu cầu',
+        error: {
+            status: statusCode,
+            stack: process.env.NODE_ENV === 'development' ? err.stack : ''
+        }
     });
 });
 

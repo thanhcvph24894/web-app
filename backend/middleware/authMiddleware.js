@@ -1,6 +1,27 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+class AuthMiddleware {
+    requireAuth(req, res, next) {
+        // Nếu người dùng chưa đăng nhập, chuyển hướng đến trang đăng nhập
+        if (!req.session.user) {
+            return res.redirect('/login');
+        }
+        next();
+    }
+
+    // Middleware cho các route không yêu cầu đăng nhập
+    guestOnly(req, res, next) {
+        // Nếu người dùng đã đăng nhập, chuyển hướng đến trang dashboard
+        if (req.session.user) {
+            return res.redirect('/dashboard');
+        }
+        next();
+    }
+}
+
+module.exports = new AuthMiddleware();
+
 exports.protect = async (req, res, next) => {
   let token;
 

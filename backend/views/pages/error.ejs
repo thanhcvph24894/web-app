@@ -29,15 +29,48 @@
             color: #666;
             margin-bottom: 20px;
         }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="error-container">
-            <div class="error-icon">⚠️</div>
-            <h1 class="mb-4">Oops!</h1>
-            <p class="error-message"><%= message %></p>
-            <a href="/" class="btn btn-primary">Về trang chủ</a>
+    <div class="container-fluid">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="text-center mt-5">
+                    <% if (error.status === 404) { %>
+                        <i class="fas fa-exclamation-triangle text-warning" style="font-size: 5rem;"></i>
+                    <% } else { %>
+                        <i class="fas fa-exclamation-circle text-danger" style="font-size: 5rem;"></i>
+                    <% } %>
+                    <h1 class="h3 mt-4"><%= error.status %> - <%= title %></h1>
+                    <p class="text-muted mb-4"><%= message %></p>
+
+                    <% if (process.env.NODE_ENV === 'development' && error.stack) { %>
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Chi tiết lỗi</h5>
+                            </div>
+                            <div class="card-body">
+                                <pre class="bg-light p-3 rounded"><code><%= error.stack %></code></pre>
+                            </div>
+                        </div>
+                    <% } %>
+
+                    <div class="mt-4">
+                        <a href="javascript:history.back()" class="btn btn-secondary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>Quay lại
+                        </a>
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>Trang chủ
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
