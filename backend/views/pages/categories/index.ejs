@@ -9,7 +9,7 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover" id="categoriesTable">
+                <table class="table table-hover datatable">
                     <thead>
                         <tr>
                             <th width="5%">STT</th>
@@ -47,9 +47,10 @@
                                 </td>
                                 <td>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input status-toggle" type="checkbox" 
-                                               data-id="<%= category._id %>"
-                                               <%= category.isActive ? 'checked' : '' %>>
+                                        <input class="form-check-input toggle-status" 
+                                               type="checkbox"
+                                               <%= category.isActive ? 'checked' : '' %>
+                                               data-url="/categories/<%= category._id %>/status">
                                         <label class="form-check-label">
                                             <span class="badge <%= category.isActive ? 'bg-success' : 'bg-danger' %>">
                                                 <%= category.isActive ? 'Hoạt động' : 'Ẩn' %>
@@ -59,11 +60,13 @@
                                 </td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="/categories/edit/<%= category._id %>" class="btn btn-sm btn-info" title="Sửa">
+                                        <a href="/categories/edit/<%= category._id %>" class="btn btn-sm btn-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-danger delete-btn" 
-                                                data-id="<%= category._id %>" title="Xóa">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-danger delete-item"
+                                                data-url="/categories/<%= category._id %>"
+                                                data-name="<%= category.name %>">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </div>
@@ -131,13 +134,13 @@ $(document).ready(function() {
     });
 
     // Xử lý xóa danh mục
-    $('.delete-btn').on('click', function() {
-        const id = $(this).data('id');
-        const row = $(this).closest('tr');
+    $('.delete-item').on('click', function() {
+        const url = $(this).data('url');
+        const name = $(this).data('name');
 
         if (confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
             $.ajax({
-                url: `/categories/${id}`,  // Sửa lại URL endpoint
+                url: url,
                 method: 'DELETE',
                 success: function(response) {
                     if (response.success) {
@@ -147,7 +150,7 @@ $(document).ready(function() {
                         Swal.fire({
                             icon: 'success',
                             title: 'Thành công!',
-                            text: 'Xóa danh mục thành công',
+                            text: 'Xóa danh mục ' + name + ' thành công',
                             timer: 2000,
                             showConfirmButton: false
                         });

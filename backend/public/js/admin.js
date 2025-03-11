@@ -9,20 +9,97 @@ $(document).ready(function() {
         $('.alert').alert('close');
     }, 5000);
 
-    // Confirm Delete
-    $('.delete-confirm').on('click', function(e) {
-        if (!confirm('Bạn có chắc chắn muốn xóa?')) {
-            e.preventDefault();
-        }
+    // Initialize DataTable
+    const table = $('.datatable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/vi.json'
+        },
+        pageLength: 10,
+        lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tất cả"]],
+        order: [[0, 'asc']],
+        responsive: true
+    });
+
+    // Handle Delete with SweetAlert2
+    $(document).on('click', '.delete-item', function(e) {
+        e.preventDefault();
+        const deleteUrl = $(this).data('url');
+        const itemName = $(this).data('name') || 'mục này';
+
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: `Bạn có chắc chắn muốn xóa ${itemName}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xóa',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: deleteUrl,
+                    type: 'DELETE',
+                    success: function(response) {
+                        if (response.success) {
+                            Swal.fire('Đã xóa!', response.message, 'success')
+                            .then(() => {
+                                // Refresh the page or remove the row
+                                const row = table.row($(e.target).closest('tr'));
+                                row.remove().draw();
+                            });
+                        } else {
+                            Swal.fire('Lỗi!', response.message, 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        const message = xhr.responseJSON?.message || 'Đã có lỗi xảy ra';
+                        Swal.fire('Lỗi!', message, 'error');
+                    }
+                });
+            }
+        });
+    });
+
+    // Toggle Status with SweetAlert2
+    $(document).on('change', '.toggle-status', function() {
+        const url = $(this).data('url');
+        const isActive = $(this).prop('checked');
+        
+        $.ajax({
+            url: url,
+            type: 'PUT',
+            data: { isActive: isActive },
+            success: function(response) {
+                if (response.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công',
+                        text: response.message,
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                } else {
+                    Swal.fire('Lỗi!', response.message, 'error');
+                }
+            },
+            error: function(xhr) {
+                const message = xhr.responseJSON?.message || 'Đã có lỗi xảy ra';
+                Swal.fire('Lỗi!', message, 'error');
+            }
+        });
     });
 
     // Image Preview
-    $('#productImage').on('change', function() {
+    $('.image-input').on('change', function() {
         const file = this.files[0];
-        if (file) {
+        const preview = $(this).data('preview');
+        if (file && preview) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                $('#imagePreview').attr('src', e.target.result);
+                $(preview).attr('src', e.target.result).show();
             }
             reader.readAsDataURL(file);
         }
@@ -34,15 +111,6 @@ $(document).ready(function() {
         value = new Intl.NumberFormat('vi-VN').format(value);
         $(this).val(value);
     });
-
-    // DataTable Initialization (if using DataTables)
-    if ($.fn.DataTable) {
-        $('.datatable').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.10.24/i18n/Vietnamese.json'
-            }
-        });
-    }
 
     // Form Validation
     $('form').on('submit', function(e) {
@@ -60,7 +128,15 @@ $(document).ready(function() {
 
         if (!isValid) {
             e.preventDefault();
-            alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi!',
+                text: 'Vui lòng điền đầy đủ thông tin bắt buộc',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000
+            });
         }
     });
 
@@ -69,6 +145,6 @@ $(document).ready(function() {
         const form = $(this).closest('form');
         form[0].reset();
         form.find('.is-invalid').removeClass('is-invalid');
-        $('#imagePreview').attr('src', '');
+        form.find('img[id^="imagePreview"]').attr('src', '').hide();
     });
 }); 

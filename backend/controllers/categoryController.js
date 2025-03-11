@@ -4,6 +4,17 @@ const path = require('path');
 const fs = require('fs');
 
 class CategoryController {
+    constructor() {
+        // Bind methods to preserve 'this' context
+        this.index = this.index.bind(this);
+        this.showCreateForm = this.showCreateForm.bind(this);
+        this.create = this.create.bind(this);
+        this.showEditForm = this.showEditForm.bind(this);
+        this.update = this.update.bind(this);
+        this.updateStatus = this.updateStatus.bind(this);
+        this.delete = this.delete.bind(this);
+    }
+
     // Xử lý upload ảnh
     handleImage(file, oldImage = null) {
         if (!file) return null;
