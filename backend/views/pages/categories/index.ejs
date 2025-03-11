@@ -46,16 +46,18 @@
                                     <% } %>
                                 </td>
                                 <td>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input toggle-status" 
-                                               type="checkbox"
-                                               <%= category.isActive ? 'checked' : '' %>
-                                               data-url="/categories/<%= category._id %>/status">
-                                        <label class="form-check-label">
-                                            <span class="badge <%= category.isActive ? 'bg-success' : 'bg-danger' %>">
-                                                <%= category.isActive ? 'Hoạt động' : 'Ẩn' %>
-                                            </span>
-                                        </label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check form-switch me-2">
+                                            <input class="form-check-input toggle-status" 
+                                                   type="checkbox"
+                                                   <%= category.isActive ? 'checked' : '' %>
+                                                   data-url="/categories/<%= category._id %>/status"
+                                                   data-id="status-badge-<%= category._id %>">
+                                        </div>
+                                        <span class="badge status-badge" id="status-badge-<%= category._id %>" 
+                                              data-active="<%= category.isActive %>">
+                                            <%= category.isActive ? 'Hoạt động' : 'Ẩn' %>
+                                        </span>
                                     </div>
                                 </td>
                                 <td>
@@ -79,6 +81,19 @@
         </div>
     </div>
 </div>
+
+<style>
+.status-badge {
+    min-width: 80px;
+    text-align: center;
+}
+.status-badge[data-active="true"] {
+    background-color: #198754;
+}
+.status-badge[data-active="false"] {
+    background-color: #dc3545;
+}
+</style>
 
 <%- contentFor('script') %>
 <script>

@@ -65,29 +65,64 @@ $(document).ready(function() {
     $(document).on('change', '.toggle-status', function() {
         const url = $(this).data('url');
         const isActive = $(this).prop('checked');
+        const badgeId = $(this).data('id');
+        const badge = $(`#${badgeId}`);
+        const originalState = !isActive; // Lưu trạng thái ban đầu
         
-        $.ajax({
-            url: url,
-            type: 'PUT',
-            data: { isActive: isActive },
-            success: function(response) {
-                if (response.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Thành công',
-                        text: response.message,
-                        toast: true,
-                        position: 'top-end',
-                        showConfirmButton: false,
-                        timer: 3000
-                    });
-                } else {
-                    Swal.fire('Lỗi!', response.message, 'error');
-                }
-            },
-            error: function(xhr) {
-                const message = xhr.responseJSON?.message || 'Đã có lỗi xảy ra';
-                Swal.fire('Lỗi!', message, 'error');
+        Swal.fire({
+            title: 'Xác nhận thay đổi?',
+            text: `Bạn có chắc chắn muốn ${isActive ? 'kích hoạt' : 'ẩn'} danh mục này?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Xác nhận',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: url,
+                    type: 'PUT',
+                    data: { isActive: isActive },
+                    success: function(response) {
+                        if (response.success) {
+                            // Cập nhật badge
+                            badge.attr('data-active', isActive)
+                                 .text(isActive ? 'Hoạt động' : 'Ẩn');
+                            
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công',
+                                text: response.message,
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
+                        } else {
+                            // Reset về trạng thái cũ nếu có lỗi
+                            $(this).prop('checked', originalState);
+                            badge.attr('data-active', originalState)
+                                 .text(originalState ? 'Hoạt động' : 'Ẩn');
+                            
+                            Swal.fire('Lỗi!', response.message, 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        // Reset về trạng thái cũ nếu có lỗi
+                        $(this).prop('checked', originalState);
+                        badge.attr('data-active', originalState)
+                             .text(originalState ? 'Hoạt động' : 'Ẩn');
+                        
+                        const message = xhr.responseJSON?.message || 'Đã có lỗi xảy ra';
+                        Swal.fire('Lỗi!', message, 'error');
+                    }
+                });
+            } else {
+                // Nếu người dùng hủy, reset về trạng thái cũ
+                $(this).prop('checked', originalState);
+                badge.attr('data-active', originalState)
+                     .text(originalState ? 'Hoạt động' : 'Ẩn');
             }
         });
     });
