@@ -4,7 +4,49 @@ const path = require('path');
 const fs = require('fs');
 
 class CategoryController {
-    // Hiển thị danh sách danh mục
+    // Xử lý upload ảnh
+    handleImage(file, oldImage = null) {
+        if (!file) return null;
+
+        // Xóa ảnh cũ nếu có
+        if (oldImage) {
+            const oldImagePath = path.join(__dirname, '../public', oldImage);
+            if (fs.existsSync(oldImagePath)) {
+                fs.unlinkSync(oldImagePath);
+            }
+        }
+
+        return '/uploads/categories/' + file.filename;
+    }
+
+    // Chuẩn bị dữ liệu danh mục
+    prepareCategoryData(body, file = null, oldImage = null) {
+        const data = {
+            name: body.name.trim(),
+            description: body.description ? body.description.trim() : '',
+            parent: body.parent || null,
+            isActive: body.isActive === 'on',
+            slug: slugify(body.name, { lower: true, locale: 'vi', strict: true })
+        };
+
+        const image = this.handleImage(file, oldImage);
+        if (image) data.image = image;
+
+        return data;
+    }
+
+    // Xử lý lỗi và xóa file đã upload nếu có
+    handleError(error, file) {
+        if (file) {
+            const filePath = path.join(__dirname, '../public/uploads/categories', file.filename);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        return error;
+    }
+
+    // API Controllers
     async index(req, res, next) {
         try {
             const categories = await categoryService.getAllCategories();
@@ -18,7 +60,6 @@ class CategoryController {
         }
     }
 
-    // Hiển thị form tạo danh mục
     async showCreateForm(req, res, next) {
         try {
             const parentCategories = await categoryService.getAllCategories();
@@ -32,70 +73,37 @@ class CategoryController {
         }
     }
 
-    // Xử lý tạo danh mục mới
     async create(req, res, next) {
         try {
-            // Validate dữ liệu đầu vào
-            if (!req.body.name) {
-                throw new Error('Tên danh mục là bắt buộc');
-            }
+            if (!req.body.name) throw new Error('Tên danh mục là bắt buộc');
 
-            const categoryData = {
-                name: req.body.name.trim(),
-                description: req.body.description ? req.body.description.trim() : '',
-                parent: req.body.parent || null,
-                isActive: req.body.isActive === 'on',
-                slug: slugify(req.body.name, { lower: true, locale: 'vi', strict: true })
-            };
-
+            const categoryData = this.prepareCategoryData(req.body, req.file);
+            
             // Kiểm tra tên danh mục đã tồn tại
             const existingCategory = await categoryService.findByName(categoryData.name);
-            if (existingCategory) {
-                throw new Error('Tên danh mục đã tồn tại');
-            }
+            if (existingCategory) throw new Error('Tên danh mục đã tồn tại');
 
-            // Kiểm tra parent category có tồn tại
+            // Kiểm tra parent category
             if (categoryData.parent) {
                 const parentExists = await categoryService.getCategoryById(categoryData.parent);
-                if (!parentExists) {
-                    throw new Error('Danh mục cha không tồn tại');
-                }
-            }
-
-            if (req.file) {
-                // Kiểm tra và tạo thư mục nếu chưa tồn tại
-                const uploadDir = path.join(__dirname, '../public/uploads/categories');
-                if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, { recursive: true });
-                }
-                categoryData.image = '/uploads/categories/' + req.file.filename;
+                if (!parentExists) throw new Error('Danh mục cha không tồn tại');
             }
 
             await categoryService.createCategory(categoryData);
             req.flash('success', 'Tạo danh mục thành công');
             res.redirect('/categories');
         } catch (error) {
-            // Xóa file đã upload nếu có lỗi
-            if (req.file) {
-                const filePath = path.join(__dirname, '../public/uploads/categories', req.file.filename);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-            }
-            next(error);
+            next(this.handleError(error, req.file));
         }
     }
 
-    // Hiển thị form chỉnh sửa danh mục
     async showEditForm(req, res, next) {
         try {
-            const category = await categoryService.getCategoryById(req.params.id);
-            if (!category) {
-                throw new Error('Không tìm thấy danh mục');
-            }
+            const [category, parentCategories] = await Promise.all([
+                categoryService.getCategoryById(req.params.id),
+                categoryService.getAllCategories()
+            ]);
 
-            const parentCategories = await categoryService.getAllCategories();
-            
             res.render('pages/categories/edit', {
                 title: 'Chỉnh sửa danh mục',
                 category,
@@ -107,35 +115,18 @@ class CategoryController {
         }
     }
 
-    // Xử lý cập nhật danh mục
     async update(req, res, next) {
         try {
+            if (!req.body.name) throw new Error('Tên danh mục là bắt buộc');
+
             const categoryId = req.params.id;
-
-            // Validate dữ liệu đầu vào
-            if (!req.body.name) {
-                throw new Error('Tên danh mục là bắt buộc');
-            }
-
-            // Kiểm tra danh mục tồn tại
             const existingCategory = await categoryService.getCategoryById(categoryId);
-            if (!existingCategory) {
-                throw new Error('Không tìm thấy danh mục');
-            }
+            
+            const updateData = this.prepareCategoryData(req.body, req.file, existingCategory.image);
 
-            const updateData = {
-                name: req.body.name.trim(),
-                description: req.body.description ? req.body.description.trim() : '',
-                parent: req.body.parent || null,
-                isActive: req.body.isActive === 'on',
-                slug: slugify(req.body.name, { lower: true, locale: 'vi', strict: true })
-            };
-
-            // Kiểm tra tên mới có bị trùng không
-            const duplicateName = await categoryService.findByNameExcept(updateData.name, categoryId);
-            if (duplicateName) {
-                throw new Error('Tên danh mục đã tồn tại');
-            }
+            // Kiểm tra tên mới có bị trùng
+            const duplicateName = await categoryService.findByName(updateData.name, categoryId);
+            if (duplicateName) throw new Error('Tên danh mục đã tồn tại');
 
             // Kiểm tra parent category
             if (updateData.parent) {
@@ -143,75 +134,37 @@ class CategoryController {
                     throw new Error('Không thể chọn chính danh mục này làm danh mục cha');
                 }
                 const parentExists = await categoryService.getCategoryById(updateData.parent);
-                if (!parentExists) {
-                    throw new Error('Danh mục cha không tồn tại');
-                }
-            }
-
-            if (req.file) {
-                // Xóa ảnh cũ nếu có
-                if (existingCategory.image) {
-                    const oldImagePath = path.join(__dirname, '../public', existingCategory.image);
-                    if (fs.existsSync(oldImagePath)) {
-                        fs.unlinkSync(oldImagePath);
-                    }
-                }
-                updateData.image = '/uploads/categories/' + req.file.filename;
+                if (!parentExists) throw new Error('Danh mục cha không tồn tại');
             }
 
             await categoryService.updateCategory(categoryId, updateData);
             req.flash('success', 'Cập nhật danh mục thành công');
             res.redirect('/categories');
         } catch (error) {
-            // Xóa file đã upload nếu có lỗi
-            if (req.file) {
-                const filePath = path.join(__dirname, '../public/uploads/categories', req.file.filename);
-                if (fs.existsSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-            }
-            next(error);
+            next(this.handleError(error, req.file));
         }
     }
 
-    // Xử lý cập nhật trạng thái
     async updateStatus(req, res) {
         try {
-            const categoryId = req.params.id;
-            const { isActive } = req.body;
-
-            // Kiểm tra danh mục tồn tại
-            const category = await categoryService.getCategoryById(categoryId);
-            if (!category) {
-                return res.status(404).json({ 
-                    success: false, 
-                    message: 'Không tìm thấy danh mục' 
-                });
-            }
-
-            await categoryService.updateCategory(categoryId, { isActive });
+            const category = await categoryService.updateCategory(req.params.id, { isActive: req.body.isActive });
             res.json({ success: true, message: 'Cập nhật trạng thái thành công' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
     }
 
-    // Xử lý xóa danh mục
-    async delete(req, res, next) {
+    async delete(req, res) {
         try {
             const categoryId = req.params.id;
-            
-            // Kiểm tra danh mục tồn tại
             const category = await categoryService.getCategoryById(categoryId);
-            if (!category) {
-                return res.status(404).json({ 
-                    success: false, 
-                    message: 'Không tìm thấy danh mục' 
-                });
-            }
 
-            // Kiểm tra xem có danh mục con không
-            const hasChildren = await categoryService.hasChildren(categoryId);
+            // Kiểm tra ràng buộc xóa
+            const [hasChildren, hasProducts] = await Promise.all([
+                categoryService.hasChildren(categoryId),
+                categoryService.hasProducts(categoryId)
+            ]);
+
             if (hasChildren) {
                 return res.status(400).json({ 
                     success: false, 
@@ -219,8 +172,6 @@ class CategoryController {
                 });
             }
 
-            // Kiểm tra xem có sản phẩm nào thuộc danh mục này không
-            const hasProducts = await categoryService.hasProducts(categoryId);
             if (hasProducts) {
                 return res.status(400).json({ 
                     success: false, 
@@ -228,18 +179,12 @@ class CategoryController {
                 });
             }
 
-            // Xóa ảnh nếu có
-            if (category.image) {
-                const imagePath = path.join(__dirname, '../public', category.image);
-                if (fs.existsSync(imagePath)) {
-                    fs.unlinkSync(imagePath);
-                }
-            }
-
+            // Xóa ảnh và danh mục
+            this.handleImage(null, category.image);
             await categoryService.deleteCategory(categoryId);
+            
             res.json({ success: true, message: 'Xóa danh mục thành công' });
         } catch (error) {
-            console.error('Lỗi khi xóa danh mục:', error);
             res.status(500).json({ 
                 success: false, 
                 message: error.message || 'Có lỗi xảy ra khi xóa danh mục' 

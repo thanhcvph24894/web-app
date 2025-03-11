@@ -3,106 +3,57 @@ const Product = require('../models/Product');
 
 class CategoryService {
     async getAllCategories() {
-        try {
-            const categories = await Category.find()
-                .populate('parent', 'name')
-                .sort({ name: 1 });
-            return categories;
-        } catch (error) {
-            throw error;
-        }
+        return Category.find()
+            .populate('parent', 'name')
+            .sort({ name: 1 });
     }
 
     async getCategoryById(id) {
-        try {
-            const category = await Category.findById(id).populate('parent', 'name');
-            if (!category) {
-                throw new Error('Không tìm thấy danh mục');
-            }
-            return category;
-        } catch (error) {
-            throw error;
-        }
+        const category = await Category.findById(id).populate('parent', 'name');
+        if (!category) throw new Error('Không tìm thấy danh mục');
+        return category;
     }
 
-    async findByName(name) {
-        try {
-            return await Category.findOne({ name: { $regex: new RegExp(`^${name}$`, 'i') } });
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async findByNameExcept(name, excludeId) {
-        try {
-            return await Category.findOne({
-                name: { $regex: new RegExp(`^${name}$`, 'i') },
-                _id: { $ne: excludeId }
-            });
-        } catch (error) {
-            throw error;
-        }
+    async findByName(name, excludeId = null) {
+        const query = { 
+            name: { $regex: new RegExp(`^${name}$`, 'i') }
+        };
+        if (excludeId) query._id = { $ne: excludeId };
+        return Category.findOne(query);
     }
 
     async createCategory(categoryData) {
         try {
-            const category = await Category.create(categoryData);
-            return category;
+            return await Category.create(categoryData);
         } catch (error) {
-            if (error.code === 11000) {
-                throw new Error('Tên danh mục đã tồn tại');
-            }
+            if (error.code === 11000) throw new Error('Tên danh mục đã tồn tại');
             throw error;
         }
     }
 
     async updateCategory(id, updateData) {
         try {
-            const category = await Category.findByIdAndUpdate(
-                id,
-                updateData,
-                { new: true, runValidators: true }
-            );
-            if (!category) {
-                throw new Error('Không tìm thấy danh mục');
-            }
+            const category = await Category.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+            if (!category) throw new Error('Không tìm thấy danh mục');
             return category;
         } catch (error) {
-            if (error.code === 11000) {
-                throw new Error('Tên danh mục đã tồn tại');
-            }
+            if (error.code === 11000) throw new Error('Tên danh mục đã tồn tại');
             throw error;
         }
     }
 
     async deleteCategory(id) {
-        try {
-            const category = await Category.findByIdAndDelete(id);
-            if (!category) {
-                throw new Error('Không tìm thấy danh mục');
-            }
-            return category;
-        } catch (error) {
-            throw error;
-        }
+        const category = await Category.findByIdAndDelete(id);
+        if (!category) throw new Error('Không tìm thấy danh mục');
+        return category;
     }
 
     async hasChildren(id) {
-        try {
-            const childrenCount = await Category.countDocuments({ parent: id });
-            return childrenCount > 0;
-        } catch (error) {
-            throw error;
-        }
+        return (await Category.countDocuments({ parent: id })) > 0;
     }
 
     async hasProducts(id) {
-        try {
-            const productsCount = await Product.countDocuments({ category: id });
-            return productsCount > 0;
-        } catch (error) {
-            throw error;
-        }
+        return (await Product.countDocuments({ category: id })) > 0;
     }
 }
 

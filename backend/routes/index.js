@@ -2,45 +2,35 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const authMiddleware = require('../middleware/authMiddleware');
+
+// Controllers
 const categoryController = require('../controllers/categoryController');
 const authController = require('../controllers/authController');
 const dashboardController = require('../controllers/dashboardController');
 const productController = require('../controllers/productController');
-const fs = require('fs');
 
-// Cấu hình multer cho upload ảnh
+// Multer configuration
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
+    destination: (req, file, cb) => {
         const uploadDir = path.join(__dirname, '../public/uploads', 
-            file.fieldname === 'productImage' ? 'products' : 'categories'
+            file.fieldname.includes('product') ? 'products' : 'categories'
         );
-        // Tạo thư mục nếu chưa tồn tại
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
+        fs.mkdirSync(uploadDir, { recursive: true });
         cb(null, uploadDir);
     },
-    filename: function (req, file, cb) {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
     }
 });
 
 const upload = multer({ 
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // giới hạn 5MB
-    },
-    fileFilter: function (req, file, cb) {
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
         const filetypes = /jpeg|jpg|png|gif/;
-        const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-        
-        if (mimetype && extname) {
-            return cb(null, true);
-        }
-        cb(new Error('Chỉ cho phép upload file ảnh (jpeg, jpg, png, gif)'));
+        cb(null, filetypes.test(file.mimetype) && filetypes.test(path.extname(file.originalname).toLowerCase()));
     }
 });
 
@@ -51,25 +41,33 @@ router.get('/logout', authMiddleware.requireAuth, authController.logout);
 
 // Redirect root to dashboard
 router.get('/', (req, res) => res.redirect('/dashboard'));
-
-// Dashboard routes
 router.get('/dashboard', authMiddleware.requireAuth, dashboardController.index);
 
 // Category routes
-router.get('/categories', authMiddleware.requireAuth, categoryController.index);
-router.get('/categories/create', authMiddleware.requireAuth, categoryController.showCreateForm);
-router.post('/categories/create', authMiddleware.requireAuth, upload.single('image'), categoryController.create);
-router.get('/categories/edit/:id', authMiddleware.requireAuth, categoryController.showEditForm);
-router.post('/categories/edit/:id', authMiddleware.requireAuth, upload.single('image'), categoryController.update);
-router.delete('/categories/:id', authMiddleware.requireAuth, categoryController.delete);
-router.put('/categories/:id/status', authMiddleware.requireAuth, categoryController.updateStatus);
+const categoryRoutes = express.Router();
+categoryRoutes.use(authMiddleware.requireAuth);
+
+categoryRoutes.get('/', categoryController.index);
+categoryRoutes.get('/create', categoryController.showCreateForm);
+categoryRoutes.post('/create', upload.single('categoryImage'), categoryController.create);
+categoryRoutes.get('/edit/:id', categoryController.showEditForm);
+categoryRoutes.post('/edit/:id', upload.single('categoryImage'), categoryController.update);
+categoryRoutes.delete('/:id', categoryController.delete);
+categoryRoutes.put('/:id/status', categoryController.updateStatus);
+
+router.use('/categories', categoryRoutes);
 
 // Product routes
-router.get('/products', authMiddleware.requireAuth, productController.index);
-router.get('/products/create', authMiddleware.requireAuth, productController.showCreateForm);
-router.post('/products/create', authMiddleware.requireAuth, upload.array('productImages', 5), productController.create);
-router.get('/products/edit/:id', authMiddleware.requireAuth, productController.showEditForm);
-router.post('/products/edit/:id', authMiddleware.requireAuth, upload.array('productImages', 5), productController.update);
-router.delete('/products/:id', authMiddleware.requireAuth, productController.delete);
+const productRoutes = express.Router();
+productRoutes.use(authMiddleware.requireAuth);
+
+productRoutes.get('/', productController.index);
+productRoutes.get('/create', productController.showCreateForm);
+productRoutes.post('/create', upload.array('productImages', 5), productController.create);
+productRoutes.get('/edit/:id', productController.showEditForm);
+productRoutes.post('/edit/:id', upload.array('productImages', 5), productController.update);
+productRoutes.delete('/:id', productController.delete);
+
+router.use('/products', productRoutes);
 
 module.exports = router; 
