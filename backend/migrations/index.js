@@ -159,20 +159,9 @@ const runMigrations = async () => {
                     price: 199000,
                     category: categories[0]._id,
                     images: ['/uploads/products/ao-thun-nam-1.jpg'],
-                    variants: [
-                        {
-                            size: 'S',
-                            color: 'Đen',
-                            stock: 100,
-                            price: 199000
-                        },
-                        {
-                            size: 'M',
-                            color: 'Đen',
-                            stock: 100,
-                            price: 199000
-                        }
-                    ]
+                    stock: 100,
+                    sold: 0,
+                    isActive: true
                 },
                 {
                     name: 'Quần jean nam',
@@ -181,20 +170,9 @@ const runMigrations = async () => {
                     price: 499000,
                     category: categories[1]._id,
                     images: ['/uploads/products/quan-jean-nam-1.jpg'],
-                    variants: [
-                        {
-                            size: '30',
-                            color: 'Xanh',
-                            stock: 50,
-                            price: 499000
-                        },
-                        {
-                            size: '32',
-                            color: 'Xanh',
-                            stock: 50,
-                            price: 499000
-                        }
-                    ]
+                    stock: 50,
+                    sold: 0,
+                    isActive: true
                 },
                 {
                     name: 'Áo sơ mi nữ',
@@ -203,20 +181,9 @@ const runMigrations = async () => {
                     price: 299000,
                     category: categories[2]._id,
                     images: ['/uploads/products/ao-so-mi-nu-1.jpg'],
-                    variants: [
-                        {
-                            size: 'S',
-                            color: 'Trắng',
-                            stock: 80,
-                            price: 299000
-                        },
-                        {
-                            size: 'M',
-                            color: 'Trắng',
-                            stock: 80,
-                            price: 299000
-                        }
-                    ]
+                    stock: 80,
+                    sold: 0,
+                    isActive: true
                 }
             ];
 

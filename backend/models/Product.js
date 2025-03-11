@@ -44,10 +44,9 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    status: {
-        type: String,
-        enum: ['active', 'inactive'],
-        default: 'active'
+    isActive: {
+        type: Boolean,
+        default: true
     },
     featured: {
         type: Boolean,

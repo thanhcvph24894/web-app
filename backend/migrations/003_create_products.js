@@ -29,31 +29,21 @@ const productSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Vui lòng tải lên ít nhất một hình ảnh']
     }],
-    variants: [{
-        size: {
-            type: String,
-            enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '28', '29', '30', '31', '32', '33', '34', '36', '38', '40', '42', '44']
-        },
-        color: String,
-        stock: {
-            type: Number,
-            default: 0
-        },
-        price: Number
-    }],
+    stock: {
+        type: Number,
+        required: true,
+        min: 0,
+        default: 0
+    },
     sold: {
         type: Number,
         default: 0
     },
-    rating: {
-        type: Number,
-        default: 0
+    isActive: {
+        type: Boolean,
+        default: true
     },
-    numReviews: {
-        type: Number,
-        default: 0
-    },
-    reviews: [{
+    ratings: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User'
@@ -65,14 +55,12 @@ const productSchema = new mongoose.Schema({
             default: Date.now
         }
     }],
-    isActive: {
-        type: Boolean,
-        default: true
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
+    averageRating: {
+        type: Number,
+        default: 0
     }
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Product', productSchema); 

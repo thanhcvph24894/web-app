@@ -67,6 +67,7 @@ productRoutes.post('/create', upload.array('productImages', 5), productControlle
 productRoutes.get('/edit/:id', productController.showEditForm);
 productRoutes.post('/edit/:id', upload.array('productImages', 5), productController.update);
 productRoutes.delete('/:id', productController.delete);
+productRoutes.put('/:id/status', productController.updateStatus);
 
 router.use('/products', productRoutes);
 

@@ -5,6 +5,18 @@ const path = require('path');
 const slugify = require('slugify');
 
 class ProductController {
+    constructor() {
+        // Bind methods to maintain this context
+        this.index = this.index.bind(this);
+        this.showCreateForm = this.showCreateForm.bind(this);
+        this.create = this.create.bind(this);
+        this.showEditForm = this.showEditForm.bind(this);
+        this.update = this.update.bind(this);
+        this.delete = this.delete.bind(this);
+        this.updateStatus = this.updateStatus.bind(this);
+        this.handleError = this.handleError.bind(this);
+    }
+
     // Hiển thị danh sách sản phẩm
     async index(req, res, next) {
         try {
@@ -15,7 +27,9 @@ class ProductController {
             res.render('pages/products/index', {
                 title: 'Quản lý sản phẩm',
                 products,
-                messages: req.flash()
+                messages: req.flash(),
+                style: '',
+                script: ''
             });
         } catch (error) {
             next(error);
@@ -29,7 +43,9 @@ class ProductController {
             res.render('pages/products/create', {
                 title: 'Thêm sản phẩm mới',
                 categories,
-                messages: req.flash()
+                messages: req.flash(),
+                style: '',
+                script: ''
             });
         } catch (error) {
             next(error);
@@ -39,16 +55,8 @@ class ProductController {
     // Xử lý tạo sản phẩm mới
     async create(req, res, next) {
         try {
-            const productData = {
-                name: req.body.name.trim(),
-                description: req.body.description ? req.body.description.trim() : '',
-                price: parseFloat(req.body.price),
-                category: req.body.category,
-                stock: parseInt(req.body.stock),
-                isActive: req.body.isActive === 'on',
-                slug: slugify(req.body.name, { lower: true, locale: 'vi', strict: true })
-            };
-
+            const productData = this.prepareProductData(req.body);
+            
             // Xử lý hình ảnh
             if (req.files && req.files.length > 0) {
                 productData.images = req.files.map(file => '/uploads/products/' + file.filename);
@@ -58,34 +66,32 @@ class ProductController {
             req.flash('success', 'Thêm sản phẩm thành công');
             res.redirect('/products');
         } catch (error) {
-            // Xóa file đã upload nếu có lỗi
-            if (req.files) {
-                req.files.forEach(file => {
-                    const filePath = path.join(__dirname, '../public/uploads/products', file.filename);
-                    if (fs.existsSync(filePath)) {
-                        fs.unlinkSync(filePath);
-                    }
-                });
-            }
-            next(error);
+            this.handleError(error, req.files);
+            req.flash('error', error.message);
+            res.redirect('/products/create');
         }
     }
 
     // Hiển thị form chỉnh sửa sản phẩm
     async showEditForm(req, res, next) {
         try {
-            const product = await Product.findById(req.params.id);
+            const [product, categories] = await Promise.all([
+                Product.findById(req.params.id).populate('category'),
+                Category.find({ isActive: true })
+            ]);
+
             if (!product) {
-                throw new Error('Không tìm thấy sản phẩm');
+                req.flash('error', 'Không tìm thấy sản phẩm');
+                return res.redirect('/products');
             }
 
-            const categories = await Category.find({ isActive: true });
-            
             res.render('pages/products/edit', {
                 title: 'Chỉnh sửa sản phẩm',
                 product,
                 categories,
-                messages: req.flash()
+                messages: req.flash(),
+                style: '',
+                script: ''
             });
         } catch (error) {
             next(error);
@@ -95,59 +101,34 @@ class ProductController {
     // Xử lý cập nhật sản phẩm
     async update(req, res, next) {
         try {
-            const productId = req.params.id;
-            const product = await Product.findById(productId);
-            
+            const product = await Product.findById(req.params.id);
             if (!product) {
                 throw new Error('Không tìm thấy sản phẩm');
             }
 
-            const updateData = {
-                name: req.body.name.trim(),
-                description: req.body.description ? req.body.description.trim() : '',
-                price: parseFloat(req.body.price),
-                category: req.body.category,
-                stock: parseInt(req.body.stock),
-                isActive: req.body.isActive === 'on',
-                slug: slugify(req.body.name, { lower: true, locale: 'vi', strict: true })
-            };
+            const updateData = this.prepareProductData(req.body);
 
             // Xử lý hình ảnh mới
             if (req.files && req.files.length > 0) {
                 // Xóa ảnh cũ
-                if (product.images && product.images.length > 0) {
-                    product.images.forEach(image => {
-                        const imagePath = path.join(__dirname, '../public', image);
-                        if (fs.existsSync(imagePath)) {
-                            fs.unlinkSync(imagePath);
-                        }
-                    });
-                }
+                this.deleteProductImages(product.images);
                 updateData.images = req.files.map(file => '/uploads/products/' + file.filename);
             }
 
-            await Product.findByIdAndUpdate(productId, updateData, { new: true });
+            await Product.findByIdAndUpdate(req.params.id, updateData);
             req.flash('success', 'Cập nhật sản phẩm thành công');
             res.redirect('/products');
         } catch (error) {
-            // Xóa file đã upload nếu có lỗi
-            if (req.files) {
-                req.files.forEach(file => {
-                    const filePath = path.join(__dirname, '../public/uploads/products', file.filename);
-                    if (fs.existsSync(filePath)) {
-                        fs.unlinkSync(filePath);
-                    }
-                });
-            }
-            next(error);
+            this.handleError(error, req.files);
+            req.flash('error', error.message);
+            res.redirect(`/products/edit/${req.params.id}`);
         }
     }
 
     // Xử lý xóa sản phẩm
-    async delete(req, res, next) {
+    async delete(req, res) {
         try {
             const product = await Product.findById(req.params.id);
-            
             if (!product) {
                 return res.status(404).json({
                     success: false,
@@ -156,14 +137,7 @@ class ProductController {
             }
 
             // Xóa ảnh sản phẩm
-            if (product.images && product.images.length > 0) {
-                product.images.forEach(image => {
-                    const imagePath = path.join(__dirname, '../public', image);
-                    if (fs.existsSync(imagePath)) {
-                        fs.unlinkSync(imagePath);
-                    }
-                });
-            }
+            this.deleteProductImages(product.images);
 
             await Product.findByIdAndDelete(req.params.id);
             res.json({
@@ -171,12 +145,81 @@ class ProductController {
                 message: 'Xóa sản phẩm thành công'
             });
         } catch (error) {
-            console.error('Lỗi khi xóa sản phẩm:', error);
             res.status(500).json({
                 success: false,
                 message: error.message || 'Có lỗi xảy ra khi xóa sản phẩm'
             });
         }
+    }
+
+    // Cập nhật trạng thái sản phẩm
+    async updateStatus(req, res) {
+        try {
+            const product = await Product.findByIdAndUpdate(
+                req.params.id,
+                { isActive: req.body.isActive },
+                { new: true }
+            );
+
+            if (!product) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Không tìm thấy sản phẩm'
+                });
+            }
+
+            res.json({
+                success: true,
+                message: `Đã ${product.isActive ? 'kích hoạt' : 'ngừng bán'} sản phẩm thành công`,
+                isActive: product.isActive
+            });
+        } catch (error) {
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Có lỗi xảy ra khi cập nhật trạng thái'
+            });
+        }
+    }
+
+    // Helper method to prepare product data
+    prepareProductData(body) {
+        return {
+            name: body.name.trim(),
+            slug: slugify(body.name, { lower: true, locale: 'vi', strict: true }),
+            description: body.description ? body.description.trim() : '',
+            price: parseFloat(body.price.replace(/[^\d]/g, '')),
+            stock: parseInt(body.stock),
+            category: body.category,
+            isActive: body.isActive === 'on'
+        };
+    }
+
+    // Helper method to delete product images
+    deleteProductImages(images) {
+        if (images && images.length > 0) {
+            images.forEach(image => {
+                const imagePath = path.join(__dirname, '../public', image);
+                if (fs.existsSync(imagePath)) {
+                    fs.unlinkSync(imagePath);
+                }
+            });
+        }
+    }
+
+    // Helper method to handle errors and clean up uploaded files
+    handleError(error, files) {
+        // Xóa file đã upload nếu có lỗi
+        if (files) {
+            const uploadedFiles = Array.isArray(files) ? files : [files];
+            uploadedFiles.forEach(file => {
+                const filePath = path.join(__dirname, '../public/uploads/products', file.filename);
+                if (fs.existsSync(filePath)) {
+                    fs.unlinkSync(filePath);
+                }
+            });
+        }
+        console.error('Lỗi:', error);
+        throw error;
     }
 }
 
