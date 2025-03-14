@@ -4,7 +4,7 @@
   "description": "Admin panel for clothing store",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation node app.js",
     "dev": "nodemon app.js",
     "build": "npm install",
     "vercel-build": "echo hello"
@@ -24,6 +24,7 @@
     "slugify": "^1.6.6"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.9"
   }
 }
