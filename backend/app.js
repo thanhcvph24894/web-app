@@ -6,6 +6,7 @@ const MongoStore = require('connect-mongo');
 const flash = require('connect-flash');
 const path = require('path');
 const expressLayouts = require('express-ejs-layouts');
+const viewMiddleware = require('./middleware/viewMiddleware');
 
 const app = express();
 
@@ -45,19 +46,16 @@ app.use(session({
         ttl: 24 * 60 * 60 // 1 day
     }),
     cookie: {
-        secure: false, // Set to false for development
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
     }
 }));
 
 // Flash messages
 app.use(flash());
-app.use((req, res, next) => {
-    res.locals.messages = req.flash();
-    res.locals.user = req.session.user;
-    res.locals.path = req.path;
-    next();
-});
+
+// View middleware - phải đặt trước routes
+app.use(viewMiddleware);
 
 // Routes
 app.use('/', require('./routes/index'));
@@ -112,7 +110,12 @@ app.use((err, req, res, next) => {
     });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server đang chạy tại http://localhost:${PORT}`);
-}); 
+// For Passenger
+if (typeof(PhusionPassenger) !== 'undefined') {
+    app.listen('passenger');
+} else {
+    const PORT = process.env.PORT || 5001;
+    app.listen(PORT, () => {
+        console.log(`Server đang chạy tại http://localhost:${PORT}`);
+    });
+} 
