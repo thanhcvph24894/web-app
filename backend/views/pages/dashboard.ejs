@@ -126,7 +126,29 @@
                                         <td><%= order.user ? order.user.name : 'N/A' %></td>
                                         <td><%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount) %></td>
                                         <td>
-                                            <span class="badge bg-<%= order.status === 'completed' ? 'success' : 'warning' %>">
+                                            <% 
+                                            let statusClass = '';
+                                            switch(order.status) {
+                                                case 'Chờ xác nhận':
+                                                    statusClass = 'warning';
+                                                    break;
+                                                case 'Đã xác nhận':
+                                                    statusClass = 'info';
+                                                    break;
+                                                case 'Đang giao hàng':
+                                                    statusClass = 'primary';
+                                                    break;
+                                                case 'Đã giao hàng':
+                                                    statusClass = 'success';
+                                                    break;
+                                                case 'Đã hủy':
+                                                    statusClass = 'danger';
+                                                    break;
+                                                default:
+                                                    statusClass = 'secondary';
+                                            }
+                                            %>
+                                            <span class="badge bg-<%= statusClass %>">
                                                 <%= order.status %>
                                             </span>
                                         </td>

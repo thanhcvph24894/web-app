@@ -18,6 +18,15 @@ class AuthMiddleware {
         }
         next();
     }
+
+    // Middleware kiểm tra quyền admin
+    isAdmin(req, res, next) {
+        if (!req.session.user || req.session.user.role !== 'admin') {
+            req.flash('error', 'Bạn không có quyền truy cập trang này');
+            return res.redirect('/dashboard');
+        }
+        next();
+    }
 }
 
 module.exports = new AuthMiddleware();

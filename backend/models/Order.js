@@ -20,6 +20,10 @@ const orderSchema = new mongoose.Schema({
         price: {
             type: Number,
             required: true
+        },
+        variant: {
+            size: String,
+            color: String
         }
     }],
     totalAmount: {
@@ -27,10 +31,21 @@ const orderSchema = new mongoose.Schema({
         required: true
     },
     shippingAddress: {
-        fullName: String,
-        address: String,
+        fullName: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        },
+        address: {
+            type: String,
+            required: true
+        },
+        ward: String,
+        district: String,
         city: String,
-        phone: String,
         note: String
     },
     status: {
@@ -40,21 +55,25 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['Thanh toán khi nhận hàng', 'Chuyển khoản ngân hàng'],
+        enum: ['COD', 'VNPAY', 'MOMO'],
         required: true
     },
     paymentStatus: {
         type: String,
-        enum: ['Chưa thanh toán', 'Đã thanh toán'],
+        enum: ['Chưa thanh toán', 'Đã thanh toán', 'Hoàn tiền'],
         default: 'Chưa thanh toán'
     },
-    coupon: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Coupon'
+    shippingFee: {
+        type: Number,
+        default: 0
     },
     discount: {
         type: Number,
         default: 0
+    },
+    coupon: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Coupon'
     }
 }, {
     timestamps: true

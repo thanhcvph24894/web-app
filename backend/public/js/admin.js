@@ -12,7 +12,21 @@ $(document).ready(function () {
     // Initialize DataTable
     const table = $('.datatable').DataTable({
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/vi.json'
+            "emptyTable": "Không có dữ liệu",
+            "info": "Hiển thị _START_ đến _END_ của _TOTAL_ mục",
+            "infoEmpty": "Hiển thị 0 đến 0 của 0 mục",
+            "infoFiltered": "(được lọc từ _MAX_ mục)",
+            "lengthMenu": "Hiển thị _MENU_ mục",
+            "loadingRecords": "Đang tải...",
+            "processing": "Đang xử lý...",
+            "search": "Tìm kiếm:",
+            "zeroRecords": "Không tìm thấy kết quả phù hợp",
+            "paginate": {
+                "first": "Đầu",
+                "last": "Cuối",
+                "next": "Tiếp",
+                "previous": "Trước"
+            }
         },
         pageLength: 10,
         lengthMenu: [[5, 10, 25, 50, -1], [5, 10, 25, 50, "Tất cả"]],

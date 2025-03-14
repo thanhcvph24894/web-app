@@ -53,11 +53,7 @@
                         <i class="fas fa-chart-bar"></i> Báo cáo
                     </a>
                 </li>
-                <li class="<%= path.includes('/settings') ? 'active' : '' %>">
-                    <a href="/settings">
-                        <i class="fas fa-cog"></i> Cài đặt
-                    </a>
-                </li>
+                <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
             </ul>
         </nav>
 
@@ -74,17 +70,6 @@
                         <div class="me-3">
                             <span class="text-muted">Xin chào,</span>
                             <span class="fw-bold"><%= user ? user.name : 'Admin' %></span>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-dark dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown">
-                                <i class="fas fa-user-circle"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i>Hồ sơ</a></li>
-                                <li><a class="dropdown-item" href="/change-password"><i class="fas fa-key me-2"></i>Đổi mật khẩu</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
-                            </ul>
                         </div>
                     </div>
                 </div>

@@ -18,10 +18,13 @@ class DashboardController {
             // Đếm số lượng người dùng
             const userCount = await User.countDocuments({ role: 'user' });
             
-            // Tính tổng doanh thu từ đơn hàng hoàn thành
+            // Tính tổng doanh thu từ đơn hàng đã giao và đã thanh toán
             const totalRevenue = await Order.aggregate([
                 {
-                    $match: { status: 'completed' }
+                    $match: { 
+                        status: 'Đã giao hàng',
+                        paymentStatus: 'Đã thanh toán'
+                    }
                 },
                 {
                     $group: {

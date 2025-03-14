@@ -36,7 +36,7 @@
     background: #495057;
 }
 
-#sidebar ul li.active > a {
+#sidebar ul li.active>a {
     background: #0d6efd;
 }
 
@@ -62,6 +62,99 @@
 .table th {
     background-color: #f8f9fa;
     white-space: nowrap;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table-striped>tbody>tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-striped>tbody>tr:nth-of-type(even) {
+    background-color: #ffffff;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+/* Form Controls in Tables */
+.table .form-select {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+}
+
+.table .form-select:hover:not(:disabled) {
+    border-color: #adb5bd;
+}
+
+.table .form-select:disabled {
+    background-color: #e9ecef;
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+/* Status Colors */
+.table .form-select option {
+    background-color: #fff;
+    color: #212529;
+}
+
+/* Order Status Colors */
+.table .order-status option[value="Chờ xác nhận"] {
+    color: #ffc107;
+}
+
+.table .order-status option[value="Đã xác nhận"] {
+    color: #17a2b8;
+}
+
+.table .order-status option[value="Đang giao hàng"] {
+    color: #007bff;
+}
+
+.table .order-status option[value="Đã giao hàng"] {
+    color: #28a745;
+}
+
+.table .order-status option[value="Đã hủy"] {
+    color: #dc3545;
+}
+
+/* Payment Status Colors */
+.table .payment-status option[value="Chưa thanh toán"] {
+    color: #ffc107;
+}
+
+.table .payment-status option[value="Đã thanh toán"] {
+    color: #28a745;
+}
+
+.table .payment-status option[value="Hoàn tiền"] {
+    color: #17a2b8;
+}
+
+/* DataTables Overrides */
+.dataTables_wrapper .table.dataTable {
+    margin-top: 16px !important;
+    margin-bottom: 16px !important;
+    border-collapse: collapse !important;
+}
+
+.table.dataTable tbody tr.odd {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table.dataTable tbody tr.even {
+    background-color: #ffffff;
+}
+
+/* Remove DataTables Shadow */
+table.dataTable.table-striped>tbody>tr:nth-of-type(2n+1)>* {
+    box-shadow: none !important;
+}
+
+.table> :not(caption)>*>* {
+    box-shadow: none !important;
 }
 
 .dataTables_wrapper {
@@ -104,6 +197,7 @@
 
 /* Responsive tables */
 @media screen and (max-width: 767px) {
+
     div.dataTables_wrapper div.dataTables_length,
     div.dataTables_wrapper div.dataTables_filter,
     div.dataTables_wrapper div.dataTables_info,
@@ -111,7 +205,7 @@
         text-align: left;
         margin-bottom: 0.5rem;
     }
-    
+
     .dataTables_wrapper .dataTables_paginate .paginate_button {
         padding: 0.3rem 0.6rem;
     }
@@ -161,15 +255,79 @@
     font-weight: bold;
 }
 
+/* Order Management Styles */
+.disabled-select {
+    background-color: #e9ecef !important;
+    opacity: 0.65;
+    cursor: not-allowed !important;
+    pointer-events: none;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-cho-xac-nhan {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-da-xac-nhan {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
+.status-dang-giao-hang {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.status-da-giao-hang {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status-da-huy {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.payment-badge {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.payment-chua-thanh-toan {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.payment-da-thanh-toan {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.payment-hoan-tien {
+    background-color: #17a2b8;
+    color: #fff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     #sidebar {
         margin-left: -250px;
     }
+
     #sidebar.active {
         margin-left: 0;
     }
+
     #content {
         width: 100%;
     }
-} 
+}
