@@ -94,10 +94,7 @@ const ProfileScreen = ({ navigation }: Props) => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Đơn hàng gần đây</Text>
             <TouchableOpacity
-              onPress={() => {
-                // TODO: Navigate to order history screen
-                console.log('Navigate to order history');
-              }}
+              onPress={() => navigation.navigate('OrderHistory')}
             >
               <Text style={styles.viewAll}>Xem tất cả</Text>
             </TouchableOpacity>

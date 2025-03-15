@@ -27,4 +27,5 @@ export type RootStackParamList = {
     Cart: undefined;
     Checkout: { cartItems: CartItem[] };
     EditProfile: undefined;
+    OrderHistory: undefined;
 }; 

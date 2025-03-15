@@ -13,6 +13,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 import { RootStackParamList, RootTabParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -74,6 +75,7 @@ const AppNavigator = () => {
             headerShown: false
           }}
         />
+        <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
