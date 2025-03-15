@@ -1,14 +1,23 @@
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
+
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
+import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-
 import SettingsScreen from '../screens/SettingsScreen';
+import ProductDetailScreen from '../screens/ProductDetailScreen';
+import CheckoutScreen from '../screens/CheckoutScreen';
+import { RootStackParamList, RootTabParamList } from '../types/navigation';
 
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const BottomTabNavigator = () => {
+const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -17,9 +26,11 @@ const BottomTabNavigator = () => {
 
           if (route.name === 'HomeTab') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Profile') {
+          } else if (route.name === 'CartTab') {
+            iconName = focused ? 'cart' : 'cart-outline';
+          } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person' : 'person-outline';
-          } else if (route.name === 'Settings') {
+          } else if (route.name === 'SettingsTab') {
             iconName = focused ? 'settings' : 'settings-outline';
           }
 
@@ -33,18 +44,43 @@ const BottomTabNavigator = () => {
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
-        options={{ title: 'Home' }}
+        options={{ title: 'Trang chủ' }}
       />
       <Tab.Screen
-        name="Profile"
+        name="CartTab"
+        component={CartScreen}
+        options={{ title: 'Giỏ hàng' }}
+      />
+      <Tab.Screen
+        name="ProfileTab"
         component={ProfileScreen}
+        options={{ title: 'Cá nhân' }}
       />
       <Tab.Screen
-        name="Settings"
+        name="SettingsTab"
         component={SettingsScreen}
+        options={{ title: 'Cài đặt' }}
       />
     </Tab.Navigator>
   );
 };
 
-export default BottomTabNavigator;
+const AppNavigator = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Main" component={TabNavigator} />
+        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
+export default AppNavigator;

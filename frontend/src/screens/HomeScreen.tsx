@@ -1,10 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList, Product } from '../types/navigation';
+import { CompositeNavigationProp } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList, RootTabParamList, Product } from '../types/navigation';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = {
+  navigation: CompositeNavigationProp<
+    BottomTabNavigationProp<RootTabParamList, 'HomeTab'>,
+    NativeStackNavigationProp<RootStackParamList>
+  >;
+};
 
 const HomeScreen = ({ navigation }: Props) => {
   const categories = ['Tất cả', 'Áo', 'Quần', 'Phụ kiện'];

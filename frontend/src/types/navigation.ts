@@ -8,9 +8,23 @@ export type Product = {
   description?: string;
 };
 
+export type CartItem = Product & {
+  quantity: number;
+  selectedSize: string;
+};
+
+export type RootTabParamList = {
+  HomeTab: undefined;
+  CartTab: undefined;
+  ProfileTab: undefined;
+  SettingsTab: undefined;
+};
+
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
-  Home: undefined;
+  Main: { screen?: keyof RootTabParamList };
   ProductDetail: { product: Product };
+  Cart: undefined;
+  Checkout: { cartItems: CartItem[] };
 }; 
