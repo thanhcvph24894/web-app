@@ -59,6 +59,7 @@ app.use(viewMiddleware);
 
 // API Routes
 app.use('/api/v1/auth', require('./routes/api/auth'));
+app.use('/api/v1', require('./routes/api/index'));
 
 // Web Routes
 app.use('/', require('./routes/index'));
