@@ -57,7 +57,10 @@ app.use(flash());
 // View middleware - phải đặt trước routes
 app.use(viewMiddleware);
 
-// Routes
+// API Routes
+app.use('/api/v1/auth', require('./routes/api/auth'));
+
+// Web Routes
 app.use('/', require('./routes/index'));
 
 // 404 handler
