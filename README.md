@@ -1,133 +1,190 @@
-# ShopApp
+# Shop App
 
-A full-stack e-commerce application built with Node.js, MongoDB, and React Native.
+Ứng dụng thương mại điện tử được xây dựng bằng Node.js, MongoDB và React Native.
 
-## Project Structure
+## Cấu trúc dự án
 
 ```
 ShopApp
-│── backend                 # Backend (Node.js + MongoDB)
-│   │── node_modules/       # Node.js libraries
-│   │── config/            # Database and environment configurations
-│   │── models/            # MongoDB data models
-│   │── routes/            # API routes
-│   │── controllers/       # API logic controllers
-│   │── middleware/        # Middleware (auth, error handling)
-│   │── .env              # Environment variables
-│   │── package.json      # NPM configuration
-│   │── server.js         # Main backend file
+├── backend                # Backend (Node.js + MongoDB)
+│   ├── controllers/      # Logic xử lý API
+│   │   └── api/         # API controllers cho mobile
+│   ├── middleware/      # Middleware (auth, error handling)
+│   │   └── api/        # API middleware cho mobile
+│   ├── models/         # MongoDB models
+│   ├── routes/         # Routes
+│   │   └── api/       # API routes cho mobile
+│   └── uploads/       # Thư mục chứa files upload
 │
-│── frontend              # Frontend (React Native)
-│   │── android/         # Android specific code
-│   │── ios/            # iOS specific code
-│   │── src/            # Main source code
-│   │   │── components/ # Reusable components
-│   │   │── screens/    # App screens
-│   │   │── api/        # API calls to backend
-│   │   │── App.js      # Main React Native file
-│   │── package.json    # NPM configuration
+└── frontend           # Frontend (React Native)
+    ├── src/          # Source code
+    │   ├── screens/  # Màn hình
+    │   ├── components/ # Components
+    │   ├── navigation/ # React Navigation
+    │   ├── services/   # API calls
+    │   └── utils/      # Utilities
+    ├── android/        # Android files
+    └── ios/           # iOS files
 ```
 
-## Prerequisites
+## Yêu cầu hệ thống
 
-- Node.js (v14 or higher)
+- Node.js (v14 trở lên)
 - MongoDB
 - React Native development environment
-- Android Studio (for Android development)
-- Xcode (for iOS development, macOS only)
+- Android Studio (cho Android)
+- Xcode (cho iOS, chỉ trên macOS)
 
-## Setup Instructions
+## Cài đặt và Chạy
 
-### Backend Setup
+### Backend
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+1. Clone repository và cài đặt dependencies:
+```bash
+cd backend
+npm install
+```
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+2. Tạo file .env với nội dung:
+```
+NODE_ENV=development
+PORT=5001
+BASE_URL=http://localhost:5001
+MONGODB_URI=mongodb://localhost:27017/shopquanao
+SESSION_SECRET=your_session_secret
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRE=30d
+```
 
-3. Create a .env file with the following variables:
-   ```
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET=your_jwt_secret
-   PORT=5000
-   ```
+3. Chạy migration để tạo dữ liệu mẫu:
+```bash
+node migrations/index.js
+```
 
-4. Start the server:
-   ```bash
-   npm start
-   ```
+4. Khởi động server:
+```bash
+npm run dev
+```
 
-### Frontend Setup
+Server sẽ chạy tại http://localhost:5001
 
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+### Frontend
 
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+1. Cài đặt dependencies:
+```bash
+cd frontend
+npm install
+```
 
-3. For iOS (macOS only):
-   ```bash
-   cd ios
-   pod install
-   cd ..
-   ```
+2. Cấu hình API endpoint trong `src/config/index.js`:
+```javascript
+export const API_URL = 'http://localhost:5001/api/v1';
+```
 
-4. Start the development server:
-   ```bash
-   npm start
-   ```
+3. Chạy ứng dụng:
+```bash
+# Khởi động Metro bundler
+npm start
 
-5. Run on Android:
-   ```bash
-   npm run android
-   ```
+# Chạy trên Android
+npm run android
 
-6. Run on iOS:
-   ```bash
-   npm run ios
-   ```
-
-## Features
-
-- User authentication and authorization
-- Product listing and details
-- Shopping cart functionality
-- Order management
-- User profile management
+# Chạy trên iOS
+npm run ios
+```
 
 ## API Documentation
 
-The backend API provides the following endpoints:
+### Authentication APIs
 
-### Authentication
-- POST /api/auth/register - Register a new user
-- POST /api/auth/login - Login user
-- GET /api/auth/profile - Get user profile
+1. Đăng ký:
+```
+POST /api/v1/auth/register
+Content-Type: application/json
 
-### Products
-- GET /api/products - Get all products
-- GET /api/products/:id - Get product details
-- POST /api/products - Create new product (Admin only)
-- PUT /api/products/:id - Update product (Admin only)
-- DELETE /api/products/:id - Delete product (Admin only)
+{
+    "name": "Người dùng",
+    "email": "user@example.com",
+    "password": "123456",
+    "phone": "0123456789"
+}
+```
 
-## Contributing
+2. Đăng nhập:
+```
+POST /api/v1/auth/login
+Content-Type: application/json
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+{
+    "email": "user@example.com",
+    "password": "123456"
+}
+```
 
-## License
+3. Lấy thông tin user:
+```
+GET /api/v1/auth/me
+Authorization: Bearer <token>
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+4. Cập nhật thông tin:
+```
+PUT /api/v1/auth/me
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "name": "Tên mới",
+    "phone": "0987654321",
+    "address": "Địa chỉ mới"
+}
+```
+
+### Product APIs
+
+1. Lấy danh sách sản phẩm:
+```
+GET /api/v1/products
+Query params:
+- page: Số trang (mặc định: 1)
+- limit: Số sản phẩm mỗi trang (mặc định: 10)
+- category: ID danh mục
+```
+
+2. Lấy chi tiết sản phẩm:
+```
+GET /api/v1/products/:slug
+```
+
+### Category APIs
+
+1. Lấy danh sách danh mục:
+```
+GET /api/v1/categories
+```
+
+## Tài khoản mặc định
+
+1. Admin:
+```
+Email: admin@gmail.com
+Password: 123456789
+```
+
+2. User:
+```
+Email: nguyenvana@example.com
+Password: 123456
+```
+
+## Lưu ý
+
+1. Backend:
+- Đảm bảo MongoDB đang chạy trước khi khởi động server
+- Chạy migration để có dữ liệu mẫu
+- Upload files sẽ được lưu trong thư mục `/uploads`
+
+2. Frontend:
+- Sử dụng React Navigation v6 cho điều hướng
+- Lưu token trong AsyncStorage
+- Có thể test API bằng Postman trước khi tích hợp vào app
