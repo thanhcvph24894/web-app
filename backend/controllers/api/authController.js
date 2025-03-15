@@ -2,6 +2,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../../models/User');
 
+// Helper function to add base URL to avatar
+const addBaseUrlToAvatar = (user) => {
+    const baseUrl = process.env.BASE_URL;
+    if (user.avatar) {
+        user.avatar = user.avatar.startsWith('http') ? user.avatar : `${baseUrl}${user.avatar}`;
+    }
+    return user;
+};
+
 // @desc    Đăng ký tài khoản mới
 // @route   POST /api/auth/register
 // @access  Public
@@ -113,17 +122,104 @@ exports.login = async (req, res) => {
 };
 
 // @desc    Lấy thông tin user hiện tại
-// @route   GET /api/auth/me
+// @route   GET /api/v1/auth/me
 // @access  Private
 exports.getMe = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select('-password');
+        const user = await User.findById(req.user.id)
+            .select('-password')
+            .lean();
+
+        // Thêm base URL vào avatar
+        const userWithFullUrl = addBaseUrlToAvatar(user);
+
         res.json({
             success: true,
-            data: user
+            data: userWithFullUrl
         });
     } catch (error) {
         console.error('Lỗi lấy thông tin user:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server'
+        });
+    }
+};
+
+// @desc    Cập nhật thông tin user
+// @route   PUT /api/v1/auth/me
+// @access  Private
+exports.updateMe = async (req, res) => {
+    try {
+        const { name, phone, address } = req.body;
+        
+        // Tìm và cập nhật user
+        const user = await User.findById(req.user.id);
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy người dùng'
+            });
+        }
+
+        // Cập nhật thông tin
+        if (name) user.name = name;
+        if (phone) user.phone = phone;
+        if (address) user.address = address;
+
+        await user.save();
+
+        // Lấy user đã cập nhật (không bao gồm password)
+        const updatedUser = await User.findById(user._id)
+            .select('-password')
+            .lean();
+
+        // Thêm base URL vào avatar
+        const userWithFullUrl = addBaseUrlToAvatar(updatedUser);
+
+        res.json({
+            success: true,
+            data: userWithFullUrl,
+            message: 'Cập nhật thông tin thành công'
+        });
+    } catch (error) {
+        console.error('Lỗi cập nhật user:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi server'
+        });
+    }
+};
+
+// @desc    Đổi mật khẩu
+// @route   PUT /api/v1/auth/change-password
+// @access  Private
+exports.changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+
+        // Kiểm tra mật khẩu hiện tại
+        const user = await User.findById(req.user.id);
+        const isMatch = await user.comparePassword(currentPassword);
+
+        if (!isMatch) {
+            return res.status(400).json({
+                success: false,
+                message: 'Mật khẩu hiện tại không đúng'
+            });
+        }
+
+        // Cập nhật mật khẩu mới
+        user.password = newPassword;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Đổi mật khẩu thành công'
+        });
+    } catch (error) {
+        console.error('Lỗi đổi mật khẩu:', error);
         res.status(500).json({
             success: false,
             message: 'Lỗi server'
