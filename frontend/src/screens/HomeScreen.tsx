@@ -1,10 +1,14 @@
-import React from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, RootTabParamList, Product } from '../types/navigation';
+import { RootStackParamList, RootTabParamList, Product as NavigationProduct } from '../types/navigation';
+import { categoryService, productService } from '../services';
+import { Category } from '../services/category-service';
+import { Product, ProductListResponse } from '../services/product-service';
+import { formatCurrency } from '../utils';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -14,18 +18,93 @@ type Props = {
 };
 
 const HomeScreen = ({ navigation }: Props) => {
-  const categories = ['Tất cả', 'Áo', 'Quần', 'Phụ kiện'];
-  
-  // Mock data for products
-  const products: Product[] = [
-    { id: 1, name: 'Áo thun basic', price: '199.000đ', image: 'https://via.placeholder.com/150' },
-    { id: 2, name: 'Quần jean', price: '399.000đ', image: 'https://via.placeholder.com/150' },
-    { id: 3, name: 'Áo sơ mi', price: '299.000đ', image: 'https://via.placeholder.com/150' },
-    { id: 4, name: 'Áo khoác', price: '499.000đ', image: 'https://via.placeholder.com/150' },
-  ];
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Lấy danh sách danh mục khi component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Lấy sản phẩm khi danh mục thay đổi hoặc trang thay đổi
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedCategory, page]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await categoryService.getCategoriesWithProducts();
+      if (response.success && response.data) {
+        // Thêm danh mục "Tất cả" vào đầu danh sách
+        const allCategory: Category = {
+          id: '',
+          name: 'Tất cả',
+          slug: '',
+        };
+        setCategories([allCategory, ...response.data]);
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy danh mục:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      
+      let response;
+      if (selectedCategory) {
+        // Nếu đã chọn danh mục cụ thể (khác "Tất cả")
+        response = await categoryService.getCategoryWithProducts(selectedCategory, page);
+        if (response.success && response.data) {
+          setProducts(response.data.products);
+          setTotalPages(response.data.pagination.pages);
+        }
+      } else {
+        // Nếu chọn "Tất cả" hoặc chưa chọn danh mục nào
+        response = await productService.getProducts({ page });
+        if (response.success && response.data) {
+          setProducts(response.data.products);
+          setTotalPages(response.data.pagination.pages);
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy sản phẩm:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCategoryPress = (category: Category, index: number) => {
+    if (index === 0) {
+      // Nếu là "Tất cả"
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(category.slug);
+    }
+    setPage(1); // Reset về trang 1 khi chuyển danh mục
+  };
 
   const handleProductPress = (product: Product) => {
-    navigation.navigate('ProductDetail', { product });
+    // Chuyển đổi Product từ API sang Product của navigation
+    const navigationProduct: NavigationProduct = {
+      id: parseInt(product.id),
+      name: product.name,
+      price: formatCurrency(product.salePrice || product.price),
+      image: product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/150',
+      description: product.description,
+      rating: product.averageRating
+    };
+    
+    navigation.navigate('ProductDetail', { product: navigationProduct });
   };
 
   return (
@@ -46,57 +125,100 @@ const HomeScreen = ({ navigation }: Props) => {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Categories */}
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
-        >
-          {categories.map((category, index) => (
-            <TouchableOpacity 
-              key={index} 
-              style={[
-                styles.categoryItem,
-                index === 0 && styles.categoryItemActive
-              ]}
-            >
-              <Text style={[
-                styles.categoryText,
-                index === 0 && styles.categoryTextActive
-              ]}>
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {loadingCategories ? (
+          <ActivityIndicator size="small" color="#000" style={styles.loader} />
+        ) : (
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesContainer}
+          >
+            {categories.map((category, index) => (
+              <TouchableOpacity 
+                key={index} 
+                style={[
+                  styles.categoryItem,
+                  (index === 0 && !selectedCategory) || (selectedCategory === category.slug) 
+                    ? styles.categoryItemActive : null
+                ]}
+                onPress={() => handleCategoryPress(category, index)}
+              >
+                <Text style={[
+                  styles.categoryText,
+                  (index === 0 && !selectedCategory) || (selectedCategory === category.slug)
+                    ? styles.categoryTextActive : null
+                ]}>
+                  {category.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
 
         {/* Products Grid */}
-        <View style={styles.productsGrid}>
-          {products.map((product) => (
-            <TouchableOpacity 
-              key={product.id} 
-              style={styles.productCard}
-              onPress={() => handleProductPress(product)}
-            >
-              <View style={styles.productImageContainer}>
-                <Image 
-                  source={{ uri: product.image }}
-                  style={styles.productImage}
-                />
+        {loading ? (
+          <ActivityIndicator size="large" color="#000" style={styles.loader} />
+        ) : (
+          <View style={styles.productsGrid}>
+            {products.length > 0 ? (
+              products.map((product) => (
                 <TouchableOpacity 
-                  style={styles.favoriteButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    // Handle favorite
-                  }}
+                  key={product.id} 
+                  style={styles.productCard}
+                  onPress={() => handleProductPress(product)}
                 >
-                  <Icon name="heart-outline" size={20} color="#000" />
+                  <View style={styles.productImageContainer}>
+                    <Image 
+                      source={{ uri: product.images && product.images.length > 0 
+                        ? product.images[0] 
+                        : 'https://via.placeholder.com/150' 
+                      }}
+                      style={styles.productImage}
+                    />
+                    <TouchableOpacity 
+                      style={styles.favoriteButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        // Handle favorite
+                      }}
+                    >
+                      <Icon name="heart-outline" size={20} color="#000" />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.productName}>{product.name}</Text>
+                  <Text style={styles.productPrice}>
+                    {formatCurrency(product.salePrice || product.price)}
+                  </Text>
                 </TouchableOpacity>
-              </View>
-              <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.productPrice}>{product.price}</Text>
+              ))
+            ) : (
+              <Text style={styles.noProductsText}>Không có sản phẩm nào</Text>
+            )}
+          </View>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <View style={styles.pagination}>
+            <TouchableOpacity 
+              style={[styles.pageButton, page === 1 && styles.disabledButton]} 
+              disabled={page === 1}
+              onPress={() => setPage(prev => Math.max(prev - 1, 1))}
+            >
+              <Icon name="chevron-back" size={20} color={page === 1 ? "#ccc" : "#000"} />
             </TouchableOpacity>
-          ))}
-        </View>
+            
+            <Text style={styles.pageInfo}>Trang {page}/{totalPages}</Text>
+            
+            <TouchableOpacity 
+              style={[styles.pageButton, page === totalPages && styles.disabledButton]} 
+              disabled={page === totalPages}
+              onPress={() => setPage(prev => Math.min(prev + 1, totalPages))}
+            >
+              <Icon name="chevron-forward" size={20} color={page === totalPages ? "#ccc" : "#000"} />
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -200,6 +322,36 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     paddingHorizontal: 4,
+  },
+  loader: {
+    marginVertical: 20,
+  },
+  noProductsText: {
+    textAlign: 'center',
+    padding: 20,
+    fontSize: 16,
+    color: '#666',
+    width: '100%',
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  pageButton: {
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+  },
+  disabledButton: {
+    borderColor: '#f0f0f0',
+    backgroundColor: '#f9f9f9',
+  },
+  pageInfo: {
+    marginHorizontal: 15,
+    fontSize: 14,
   },
 });
 
