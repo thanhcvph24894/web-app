@@ -16,6 +16,7 @@ import authService from '../services/auth-service';
 import cartService, { Cart } from '../services/cart-service';
 import { formatCurrency } from '../utils';
 import { CartItem, RootStackParamList, Product } from '../types/navigation';
+import CustomHeader from '../components/CustomHeader';
 
 type CartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -262,43 +263,50 @@ const CartScreen = () => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color="#2196F3" />
       </View>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Vui lòng đăng nhập để xem giỏ hàng</Text>
-        <TouchableOpacity
-          style={styles.loginButton}
-          // @ts-ignore
-          onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.loginButtonText}>Đăng nhập</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <CustomHeader title="Giỏ hàng" showBackButton={false} />
+        <View style={styles.centerContainer}>
+          <Icon name="cart-outline" size={80} color="#ccc" />
+          <Text style={styles.emptyText}>Vui lòng đăng nhập để xem giỏ hàng</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginButtonText}>Đăng nhập</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   if (!cart || cart.items.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Icon name="cart-outline" size={80} color="#ccc" />
-        <Text style={styles.emptyText}>Giỏ hàng của bạn đang trống</Text>
-        <TouchableOpacity
-          style={styles.shopButton}
-          onPress={() => navigation.navigate('Main', { screen: 'HomeTab' })}>
-          <Text style={styles.shopButtonText}>Tiếp tục mua sắm</Text>
-        </TouchableOpacity>
+      <View style={styles.container}>
+        <CustomHeader title="Giỏ hàng" showBackButton={false} />
+        <View style={styles.centerContainer}>
+          <Icon name="cart-outline" size={80} color="#ccc" />
+          <Text style={styles.emptyText}>Giỏ hàng của bạn đang trống</Text>
+          <TouchableOpacity
+            style={styles.shopButton}
+            onPress={() => navigation.navigate('Main', { screen: 'HomeTab' })}>
+            <Text style={styles.shopButtonText}>Tiếp tục mua sắm</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Giỏ hàng của bạn</Text>
+      <CustomHeader title="Giỏ hàng" showBackButton={false} />
+      
+      <View style={styles.actionBar}>
         <TouchableOpacity onPress={handleClearCart}>
           <Text style={styles.clearButton}>Xóa tất cả</Text>
         </TouchableOpacity>
@@ -341,21 +349,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
+  actionBar: {
+    alignItems: 'flex-end',
+    padding: 10,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   clearButton: {
     color: '#ff3b30',
+    fontSize: 14,
+    padding: 5,
   },
   itemList: {
     paddingVertical: 10,

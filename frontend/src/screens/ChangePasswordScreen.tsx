@@ -12,6 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { authService } from '../services';
+import CustomHeader from '../components/CustomHeader';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'ChangePassword'>;
@@ -70,16 +71,7 @@ const ChangePasswordScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Đổi mật khẩu</Text>
-        <View style={styles.headerRight} />
-      </View>
+      <CustomHeader title="Đổi mật khẩu" />
 
       <View style={styles.content}>
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -140,24 +132,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  backButton: {
-    width: 40,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  headerRight: {
-    width: 40,
   },
   content: {
     flex: 1,

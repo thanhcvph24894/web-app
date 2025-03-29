@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// URL API endpoint
 const ROOT_HTTP = 'http://10.0.2.2:5001/api/v1/';
 type RequestMethod = 'POST' | 'GET' | 'PUT' | 'DELETE';
 
@@ -19,6 +20,9 @@ export interface ApiResponse<T = any> {
   data?: T;
   message?: string;
   unauthorizedError?: boolean;
+  serverError?: boolean;
+  statusCode?: number;
+  networkError?: boolean;
 }
 
 // Request không cần xác thực
@@ -67,6 +71,8 @@ export const authRequest = <T = any>(
     });
   }
 
+  console.log(`[authRequest] Gọi API ${method} ${url} với data:`, data);
+  
   return axios({
     method,
     url,
@@ -80,23 +86,58 @@ export const authRequest = <T = any>(
       Authorization: `Bearer ${token}`,
     },
   })
-    .then(response => response.data)
+    .then(response => {
+      console.log(`[authRequest] Kết quả API ${url}:`, response.data);
+      return response.data;
+    })
     .catch(error => {
       console.error('API Auth Error:', error);
       
-      // Xử lý lỗi 401 - Unauthorized
-      if (error.response && error.response.status === 401) {
+      if (error.response) {
+        // Lỗi từ phía server (status codes khác 2xx)
+        console.error('Error status:', error.response.status);
+        console.error('Error data:', error.response.data);
+        
+        // Xử lý lỗi 401 - Unauthorized
+        if (error.response.status === 401) {
+          return {
+            success: false,
+            message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại',
+            unauthorizedError: true,
+          };
+        }
+        
+        // Xử lý lỗi 500 - Server Error
+        if (error.response.status === 500) {
+          console.error('Server error details:', error.response.data);
+          return {
+            success: false,
+            message: error.response.data?.message || 'Lỗi máy chủ, vui lòng thử lại sau',
+            serverError: true,
+          };
+        }
+        
         return {
           success: false,
-          message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại',
-          unauthorizedError: true,
+          message: error.response.data?.message || 'Có lỗi xảy ra, vui lòng thử lại',
+          statusCode: error.response.status,
+        };
+      } else if (error.request) {
+        // Lỗi không nhận được response từ server
+        console.error('Error request:', error.request);
+        return {
+          success: false,
+          message: 'Không thể kết nối đến máy chủ, vui lòng kiểm tra kết nối mạng',
+          networkError: true,
+        };
+      } else {
+        // Lỗi khi thiết lập request
+        console.error('Error message:', error.message);
+        return {
+          success: false,
+          message: 'Lỗi cấu hình yêu cầu: ' + error.message,
         };
       }
-      
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Lỗi kết nối đến máy chủ',
-      };
     });
 };
 

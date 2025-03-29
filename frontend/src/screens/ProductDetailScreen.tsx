@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Product } from '../types/navigation';
 import { productService, cartService } from '../services';
 import { formatCurrency } from '../utils';
+import CustomHeader from '../components/CustomHeader';
 
 type Comment = {
   id: string;
@@ -222,6 +223,8 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
 
   return (
     <View style={styles.container}>
+      <CustomHeader title={productDetails.name} />
+
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hình ảnh sản phẩm */}
         <Image

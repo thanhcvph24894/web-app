@@ -16,6 +16,7 @@ import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from '../types/navigation';
 import { authService, logout, orderService } from '../services';
+import CustomHeader from '../components/CustomHeader';
 
 type ProfileScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<RootTabParamList, 'ProfileTab'>,
@@ -150,9 +151,7 @@ const ProfileScreen = ({ navigation }: Props) => {
   if (!userInfo) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Tài khoản</Text>
-        </View>
+        <CustomHeader title="Tài khoản" showBackButton={false} />
         <View style={styles.notLoggedInContainer}>
           <Text style={styles.notLoggedInText}>Bạn chưa đăng nhập</Text>
           <TouchableOpacity 
@@ -168,9 +167,7 @@ const ProfileScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Tài khoản</Text>
-      </View>
+      <CustomHeader title="Tài khoản" showBackButton={false} />
 
       <ScrollView style={styles.content}>
         {/* User Info Section */}
@@ -246,12 +243,12 @@ const ProfileScreen = ({ navigation }: Props) => {
                     style={[
                       styles.orderStatus,
                       {
-                        color: order.status === 'Đã giao hàng' ? '#4CAF50' : 
-                               order.status === 'Đã hủy' ? '#f44336' : '#FF9800',
+                        color: order.orderStatus === 'Đã giao hàng' ? '#4CAF50' :
+                        order.orderStatus === 'Đã hủy' ? '#f44336' : '#FF9800',
                       },
                     ]}
                   >
-                    {order.status}
+                    {order.orderStatus}
                   </Text>
                   <Icon name="chevron-forward" size={24} color="#ccc" />
                 </View>

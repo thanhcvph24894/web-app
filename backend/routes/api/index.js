@@ -29,5 +29,7 @@ router.get('/orders', protect, orderController.getOrders);
 router.get('/orders/:id', protect, orderController.getOrderById);
 router.post('/orders', protect, orderController.createOrder);
 router.put('/orders/:id/cancel', protect, orderController.cancelOrder);
+router.put('/orders/:id/update-status', protect, orderController.updateStatus);
+router.put('/orders/:id/pay', protect, orderController.payOrder);
 
 module.exports = router; 

@@ -11,6 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import authService, { AuthUser } from '../services/auth-service';
+import CustomHeader from '../components/CustomHeader';
 
 const AccountScreen = () => {
   const navigation = useNavigation();
@@ -84,6 +85,8 @@ const AccountScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
+      <CustomHeader title="Tài khoản" showBackButton={false} />
+      
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <Text style={styles.avatarText}>{user.name.charAt(0).toUpperCase()}</Text>

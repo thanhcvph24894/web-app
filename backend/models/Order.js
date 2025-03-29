@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
+    orderNumber: {
+        type: String,
+        required: true,
+        unique: true
+    },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -43,12 +48,20 @@ const orderSchema = new mongoose.Schema({
             type: String,
             required: true
         },
-        ward: String,
-        district: String,
-        city: String,
-        note: String
+        city: {
+            type: String,
+            required: false
+        },
+        district: {
+            type: String,
+            required: false
+        },
+        ward: {
+            type: String,
+            required: false
+        }
     },
-    status: {
+    orderStatus: {
         type: String,
         enum: ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao hàng', 'Đã giao hàng', 'Đã hủy'],
         default: 'Chờ xác nhận'
@@ -63,6 +76,12 @@ const orderSchema = new mongoose.Schema({
         enum: ['Chưa thanh toán', 'Đã thanh toán', 'Hoàn tiền'],
         default: 'Chưa thanh toán'
     },
+    paidAt: {
+        type: Date
+    },
+    deliveredAt: {
+        type: Date
+    },
     shippingFee: {
         type: Number,
         default: 0
@@ -71,12 +90,25 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    note: String,
     coupon: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Coupon'
     }
 }, {
     timestamps: true
+});
+
+// Tự động tạo orderNumber nếu không được thiết lập
+orderSchema.pre('save', function(next) {
+    if (!this.orderNumber) {
+        this.orderNumber = 'DH' + Date.now() + Math.floor(Math.random() * 1000);
+    }
+    // Để tương thích với dữ liệu cũ, chuyển từ status sang orderStatus nếu cần
+    if (this.status && !this.orderStatus) {
+        this.orderStatus = this.status;
+    }
+    next();
 });
 
 module.exports = mongoose.model('Order', orderSchema); 

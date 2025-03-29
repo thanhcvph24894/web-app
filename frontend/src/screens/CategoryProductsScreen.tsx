@@ -13,6 +13,7 @@ import { RootStackParamList, Product } from '../types/navigation';
 import { categoryService } from '../services';
 import { formatCurrency } from '../utils';
 import Icon from 'react-native-vector-icons/Ionicons';
+import CustomHeader from '../components/CustomHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CategoryProducts'>;
 
@@ -116,16 +117,7 @@ const CategoryProductsScreen = ({ navigation, route }: Props) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{categoryName}</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <CustomHeader title={categoryName} />
 
       {loading && products.length === 0 ? (
         <View style={styles.loadingContainer}>

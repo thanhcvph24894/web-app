@@ -17,6 +17,19 @@ import OrderHistoryScreen from '../screens/OrderHistoryScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import {RootStackParamList, RootTabParamList} from '../types/navigation';
 
+// Bọc các component vào React.memo để tránh lỗi rendering
+const MemoizedLoginScreen = React.memo(LoginScreen);
+const MemoizedRegisterScreen = React.memo(RegisterScreen);
+const MemoizedHomeScreen = React.memo(HomeScreen);
+const MemoizedCartScreen = React.memo(CartScreen);
+const MemoizedProfileScreen = React.memo(ProfileScreen);
+const MemoizedProductDetailScreen = React.memo(ProductDetailScreen);
+const MemoizedCategoryProductsScreen = React.memo(CategoryProductsScreen);
+const MemoizedCheckoutScreen = React.memo(CheckoutScreen);
+const MemoizedEditProfileScreen = React.memo(EditProfileScreen);
+const MemoizedOrderHistoryScreen = React.memo(OrderHistoryScreen);
+const MemoizedChangePasswordScreen = React.memo(ChangePasswordScreen);
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
@@ -43,17 +56,17 @@ const MainTabs = () => {
       })}>
       <Tab.Screen
         name="HomeTab"
-        component={HomeScreen}
+        component={MemoizedHomeScreen}
         options={{tabBarLabel: 'Trang chủ'}}
       />
       <Tab.Screen
         name="CartTab"
-        component={CartScreen}
+        component={MemoizedCartScreen}
         options={{tabBarLabel: 'Giỏ hàng'}}
       />
       <Tab.Screen
         name="ProfileTab"
-        component={ProfileScreen}
+        component={MemoizedProfileScreen}
         options={{tabBarLabel: 'Tài khoản'}}
       />
     </Tab.Navigator>
@@ -69,18 +82,18 @@ const AppNavigator = () => {
           contentStyle: {backgroundColor: '#fff'},
         }}>
         <Stack.Screen name="Main" component={MainTabs} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <Stack.Screen name="Login" component={MemoizedLoginScreen} />
+        <Stack.Screen name="Register" component={MemoizedRegisterScreen} />
+        <Stack.Screen name="ProductDetail" component={MemoizedProductDetailScreen} />
         <Stack.Screen
           name="CategoryProducts"
-          component={CategoryProductsScreen}
+          component={MemoizedCategoryProductsScreen}
         />
-        <Stack.Screen name="Cart" component={CartScreen} />
-        <Stack.Screen name="Checkout" component={CheckoutScreen} />
-        <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="Cart" component={MemoizedCartScreen} />
+        <Stack.Screen name="Checkout" component={MemoizedCheckoutScreen} />
+        <Stack.Screen name="OrderHistory" component={MemoizedOrderHistoryScreen} />
+        <Stack.Screen name="EditProfile" component={MemoizedEditProfileScreen} />
+        <Stack.Screen name="ChangePassword" component={MemoizedChangePasswordScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

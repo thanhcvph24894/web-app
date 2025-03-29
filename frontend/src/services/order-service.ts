@@ -31,13 +31,15 @@ export interface Order {
   user: string;
   items: OrderItem[];
   totalAmount: number;
-  status: string;
+  orderStatus: string;
   paymentMethod: string;
+  paymentStatus: string;
   shippingAddress: ShippingAddress;
-  isPaid: boolean;
   paidAt?: string;
-  isDelivered: boolean;
   deliveredAt?: string;
+  shippingFee: number;
+  discount: number;
+  coupon?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,7 +62,6 @@ export interface OrderResponse {
 
 // Định nghĩa kiểu dữ liệu cho request tạo đơn hàng
 export interface CreateOrderData {
-  items?: { productId: string; quantity: number; variant?: any }[];
   shippingAddress: ShippingAddress;
   paymentMethod: string;
 }
@@ -79,6 +80,7 @@ const orderService = {
 
   // Tạo đơn hàng mới
   createOrder: async (orderData: CreateOrderData) => {
+    console.log('Gửi yêu cầu tạo đơn hàng:', orderData);
     return authRequest<OrderResponse>('orders', 'POST', orderData);
   },
 

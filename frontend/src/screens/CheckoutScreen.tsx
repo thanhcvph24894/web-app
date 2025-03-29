@@ -16,6 +16,7 @@ import cartService, { Cart } from '../services/cart-service';
 import authService from '../services/auth-service';
 import orderService from '../services/order-service';
 import { formatCurrency } from '../utils';
+import CustomHeader from '../components/CustomHeader';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
@@ -129,20 +130,25 @@ const CheckoutScreen = ({ navigation }: Props) => {
     setPlacing(true);
     
     try {
+      // Đảm bảo giá trị paymentMethod là một trong các giá trị hợp lệ: 'COD', 'VNPAY', 'MOMO'
+      const paymentMethod = selectedPayment === 'cod' ? 'COD' : 'VNPAY';
+      
       const orderData = {
         shippingAddress: {
           fullName: shippingInfo.fullName,
           phone: shippingInfo.phone,
           address: shippingInfo.address,
-          city: shippingInfo.city,
-          district: shippingInfo.district,
-          ward: shippingInfo.ward,
-          note: shippingInfo.note
+          city: shippingInfo.city || '',
+          district: shippingInfo.district || '',
+          ward: shippingInfo.ward || '',
+          note: shippingInfo.note || ''
         },
-        paymentMethod: selectedPayment === 'cod' ? 'COD' : 'BANKING'
+        paymentMethod: paymentMethod
       };
 
+      console.log('Gửi đơn hàng với dữ liệu:', JSON.stringify(orderData));
       const response = await orderService.createOrder(orderData);
+      console.log('Kết quả tạo đơn hàng:', JSON.stringify(response));
       
       if (response.unauthorizedError) {
         Alert.alert(
@@ -162,6 +168,9 @@ const CheckoutScreen = ({ navigation }: Props) => {
       }
       
       if (response.success) {
+        // Xóa thông tin giỏ hàng khỏi state
+        setCart(null);
+        
         Alert.alert(
           'Thành công',
           'Đặt hàng thành công. Cảm ơn bạn đã mua hàng!',
@@ -177,11 +186,21 @@ const CheckoutScreen = ({ navigation }: Props) => {
           ]
         );
       } else {
-        Alert.alert('Lỗi', response.message || 'Có lỗi xảy ra khi đặt hàng');
+        const errorMessage = response.message || 'Có lỗi xảy ra khi đặt hàng';
+        console.error('Lỗi đặt hàng chi tiết:', errorMessage);
+        Alert.alert('Lỗi', errorMessage);
       }
     } catch (error) {
       console.error('Lỗi đặt hàng:', error);
-      Alert.alert('Lỗi', 'Không thể đặt hàng. Vui lòng thử lại sau.');
+      let errorMessage = 'Không thể đặt hàng. Vui lòng thử lại sau.';
+      
+      // Kiểm tra loại lỗi để hiển thị thông báo phù hợp
+      if (error instanceof Error) {
+        console.error('Chi tiết lỗi:', error.message);
+        errorMessage = `Lỗi: ${error.message}`;
+      }
+      
+      Alert.alert('Lỗi', errorMessage);
     } finally {
       setPlacing(false);
     }
@@ -210,13 +229,7 @@ const CheckoutScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thanh toán</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <CustomHeader title="Thanh toán" />
 
       <ScrollView style={styles.content}>
         {/* Shipping Information */}
@@ -333,18 +346,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
   },
   content: {
     flex: 1,

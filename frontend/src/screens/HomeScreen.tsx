@@ -21,6 +21,7 @@ import {
 } from '../types/navigation';
 import {categoryService, productService} from '../services';
 import {formatCurrency} from '../utils';
+import CustomHeader from '../components/CustomHeader';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -175,9 +176,7 @@ const HomeScreen = ({navigation}: Props) => {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cửa hàng</Text>
-      </View>
+      <CustomHeader title="Cửa hàng" showBackButton={false} />
 
       <View style={styles.categories}>
         <Text style={styles.sectionTitle}>Danh mục</Text>

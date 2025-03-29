@@ -12,6 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { orderService, authService } from '../services';
+import CustomHeader from '../components/CustomHeader';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'OrderHistory'>;
@@ -30,9 +31,9 @@ type OrderItem = {
 type Order = {
   _id: string;
   orderNumber: string;
-  status: string;
+  items: any[];
   totalAmount: number;
-  items: OrderItem[];
+  orderStatus: string;
   createdAt: string;
 };
 
@@ -108,59 +109,34 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
     }
   };
 
-  const handleCancelOrder = (orderId: string) => {
-    Alert.alert(
-      'Xác nhận hủy đơn',
-      'Bạn có chắc chắn muốn hủy đơn hàng này?',
-      [
-        {
-          text: 'Không',
-          style: 'cancel',
-        },
-        {
-          text: 'Có',
-          onPress: async () => {
-            try {
-              setCancelingOrderId(orderId);
-              const response = await orderService.cancelOrder(orderId);
-              
-              if (response.success) {
-                // Cập nhật lại trạng thái đơn hàng
-                setOrders(
-                  orders.map((order) =>
-                    order._id === orderId
-                      ? { ...order, status: 'Đã hủy' }
-                      : order
-                  )
-                );
-                Alert.alert('Thành công', 'Đã hủy đơn hàng');
-              } else {
-                Alert.alert('Lỗi', response.message || 'Không thể hủy đơn hàng');
-              }
-            } catch (error) {
-              console.error('Lỗi khi hủy đơn hàng:', error);
-              Alert.alert('Lỗi', 'Không thể hủy đơn hàng. Vui lòng thử lại sau.');
-            } finally {
-              setCancelingOrderId(null);
-            }
-          },
-        },
-      ]
-    );
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      setLoading(true);
+      await orderService.cancelOrder(orderId);
+      // Cập nhật lại trạng thái đơn hàng trong state
+      const updatedOrders = orders.map(order =>
+        order._id === orderId
+        ? { ...order, orderStatus: 'Đã hủy' }
+        : order
+      );
+      setOrders(updatedOrders);
+      Alert.alert('Thành công', 'Đã hủy đơn hàng');
+    } catch (error) {
+      console.error('Lỗi khi hủy đơn hàng:', error);
+      Alert.alert('Lỗi', 'Không thể hủy đơn hàng. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (orderStatus: string) => {
+    switch (orderStatus) {
       case 'Đã giao hàng':
         return '#4CAF50';
-      case 'Đang giao hàng':
-        return '#FF9800';
-      case 'Chờ xác nhận':
-        return '#2196F3';
       case 'Đã hủy':
         return '#f44336';
       default:
-        return '#666';
+        return '#FF9800';
     }
   };
 
@@ -179,16 +155,7 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Lịch sử đơn hàng</Text>
-        <View style={styles.placeholder} />
-      </View>
+      <CustomHeader title="Lịch sử đơn hàng" />
 
       <ScrollView style={styles.content}>
         {orders.length > 0 ? (
@@ -199,10 +166,10 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
                 <Text
                   style={[
                     styles.orderStatus,
-                    { color: getStatusColor(order.status) },
+                    { color: getStatusColor(order.orderStatus) },
                   ]}
                 >
-                  {order.status}
+                  {order.orderStatus}
                 </Text>
               </View>
 
@@ -223,7 +190,7 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
                 <Text style={styles.totalAmount}>{order.totalAmount.toLocaleString('vi-VN')}đ</Text>
               </View>
 
-              {(order.status === 'Chờ xác nhận') && (
+              {(order.orderStatus === 'Chờ xác nhận') && (
                 <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={() => handleCancelOrder(order._id)}
