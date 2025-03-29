@@ -165,6 +165,7 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
   };
 
   const renderColorOption = ({ item }: { item: string }) => {
+    // Xác định màu của icon dựa trên độ sáng của màu nền
     const isLightColor = item.toLowerCase() === 'trắng' || item.toLowerCase() === 'white';
     const checkmarkColor = isLightColor ? '#000' : '#fff';
 
@@ -183,8 +184,6 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
               backgroundColor: item.toLowerCase() === 'trắng' ? '#ffffff' : 
                               item.toLowerCase() === 'đen' ? '#000000' : 
                               item.toLowerCase() === 'xám' ? '#888888' : 
-                              item.toLowerCase() === 'vàng' ? '#FFD700' : 
-                              item.toLowerCase() === 'đỏ' ? '#FF0000' : 
                               item.toLowerCase() === 'xanh' ? '#0000FF' : 
                               item.toLowerCase() === 'tím' ? '#800080' : 
                               item.toLowerCase() === 'cam' ? '#FFA500' : 
@@ -196,18 +195,13 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
                               item.toLowerCase() === 'xanh lơ' ? '#00FFFF' : 
                               item.toLowerCase() === 'xanh nước biển' ? '#00BFFF' : 
                               item.toLowerCase() === 'xanh lá cây' ? '#008000' : 
-                              item.toLowerCase() === 'xanh dương nước biển' ? '#00BFFF' : 
-                              item.toLowerCase() === 'xanh lá mạch' ? '#008000' : 
-                              item.toLowerCase() === 'xanh lá cây' ? '#008000' : 
-                              item.toLowerCase() === 'hồng nhạt' ? '#FFB6C1' : 
                               item.toLowerCase() 
 
             },
-            selectedColor === item && styles.selectedColorOption,
           ]}
         >
           {selectedColor === item && (
-            <Icon name="checkmark-sharp" size={20} color={checkmarkColor} />
+            <Icon name="checkmark" size={16} color={checkmarkColor} />
           )}
         </View>
         <Text style={[
@@ -483,29 +477,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 16,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 20,
   },
   selectedColorContainer: {
-    backgroundColor: 'rgba(0,0,0,0.08)',
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   colorOption: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: '#d0d0d0',
-    elevation: 2,
-  },
-  selectedColorOption: {
-    borderWidth: 2,
-    borderColor: '#000',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   colorText: {
-    marginLeft: 6,
+    marginLeft: 8,
     fontSize: 14,
     color: '#333',
   },
