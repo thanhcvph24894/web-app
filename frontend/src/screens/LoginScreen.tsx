@@ -38,12 +38,8 @@ const LoginScreen = ({ navigation }: Props) => {
       console.log('Kết quả đăng nhập:', response);
       
       if (response?.success) {
-        // Lưu token để sử dụng cho các request sau này
-        const token = response.data?.token;
-        if (token) {
-          setToken(token);
-          navigation.navigate('Main', { screen: 'HomeTab' });
-        }
+        // Đăng nhập thành công, điều hướng đến trang chính
+        navigation.navigate('Main', { screen: 'HomeTab' });
       } else {
         setError(response?.message || 'Đăng nhập thất bại');
       }

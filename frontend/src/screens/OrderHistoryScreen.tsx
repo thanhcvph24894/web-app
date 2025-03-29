@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,50 +6,107 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
+import { orderService, authService } from '../services';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'OrderHistory'>;
 };
 
-// Mock data cho lịch sử đơn hàng
-const orderHistoryData = [
-  {
-    id: '1',
-    date: '15/03/2024',
-    total: '498.000đ',
-    status: 'Đã giao',
-    items: [
-      { name: 'Áo thun nam', quantity: 2, price: '149.000đ' },
-      { name: 'Quần jean', quantity: 1, price: '200.000đ' },
-    ],
-  },
-  {
-    id: '2',
-    date: '10/03/2024',
-    total: '697.000đ',
-    status: 'Đang giao',
-    items: [
-      { name: 'Áo khoác', quantity: 1, price: '497.000đ' },
-      { name: 'Nón', quantity: 1, price: '200.000đ' },
-    ],
-  },
-  {
-    id: '3',
-    date: '05/03/2024',
-    total: '398.000đ',
-    status: 'Chờ xác nhận',
-    items: [
-      { name: 'Giày thể thao', quantity: 1, price: '398.000đ' },
-    ],
-  },
-];
+type OrderItem = {
+  product: {
+    name: string;
+    price: number;
+    _id: string;
+  };
+  quantity: number;
+  price: number;
+};
+
+type Order = {
+  _id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: number;
+  items: OrderItem[];
+  createdAt: string;
+};
 
 const OrderHistoryScreen = ({ navigation }: Props) => {
-  const [orders, setOrders] = useState(orderHistoryData);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [cancelingOrderId, setCancelingOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    setLoading(true);
+    try {
+      // Kiểm tra nếu đã đăng nhập
+      const isAuthenticated = await authService.isAuthenticated();
+      if (!isAuthenticated) {
+        // Nếu chưa đăng nhập, chuyển hướng đến trang đăng nhập
+        Alert.alert(
+          'Thông báo', 
+          'Vui lòng đăng nhập để xem lịch sử đơn hàng',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => navigation.navigate('Login')
+            }
+          ]
+        );
+        setLoading(false);
+        return;
+      }
+
+      const response = await orderService.getOrders();
+      
+      // Kiểm tra lỗi unauthorized
+      if (response.unauthorizedError) {
+        // Xử lý lỗi phiên đăng nhập hết hạn
+        Alert.alert(
+          'Thông báo',
+          response.message || 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => {
+                // Đăng xuất trước khi chuyển đến màn hình đăng nhập
+                authService.logout();
+                navigation.navigate('Login');
+              }
+            }
+          ]
+        );
+        setLoading(false);
+        return;
+      }
+      
+      if (response.success && response.data) {
+        if (Array.isArray(response.data)) {
+          setOrders(response.data as Order[]);
+        } else if ('orders' in response.data) {
+          setOrders((response.data as any).orders as Order[]);
+        } else {
+          setOrders([]);
+        }
+      } else {
+        Alert.alert('Lỗi', 'Không thể tải lịch sử đơn hàng');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải lịch sử đơn hàng:', error);
+      Alert.alert('Lỗi', 'Không thể tải lịch sử đơn hàng. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCancelOrder = (orderId: string) => {
     Alert.alert(
@@ -62,16 +119,30 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
         },
         {
           text: 'Có',
-          onPress: () => {
-            // Cập nhật trạng thái đơn hàng thành "Đã hủy"
-            setOrders(
-              orders.map((order) =>
-                order.id === orderId
-                  ? { ...order, status: 'Đã hủy' }
-                  : order
-              )
-            );
-            Alert.alert('Thành công', 'Đã hủy đơn hàng');
+          onPress: async () => {
+            try {
+              setCancelingOrderId(orderId);
+              const response = await orderService.cancelOrder(orderId);
+              
+              if (response.success) {
+                // Cập nhật lại trạng thái đơn hàng
+                setOrders(
+                  orders.map((order) =>
+                    order._id === orderId
+                      ? { ...order, status: 'Đã hủy' }
+                      : order
+                  )
+                );
+                Alert.alert('Thành công', 'Đã hủy đơn hàng');
+              } else {
+                Alert.alert('Lỗi', response.message || 'Không thể hủy đơn hàng');
+              }
+            } catch (error) {
+              console.error('Lỗi khi hủy đơn hàng:', error);
+              Alert.alert('Lỗi', 'Không thể hủy đơn hàng. Vui lòng thử lại sau.');
+            } finally {
+              setCancelingOrderId(null);
+            }
           },
         },
       ]
@@ -80,9 +151,9 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Đã giao':
+      case 'Đã giao hàng':
         return '#4CAF50';
-      case 'Đang giao':
+      case 'Đang giao hàng':
         return '#FF9800';
       case 'Chờ xác nhận':
         return '#2196F3';
@@ -92,6 +163,19 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
         return '#666';
     }
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -107,47 +191,59 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
       </View>
 
       <ScrollView style={styles.content}>
-        {orders.map((order) => (
-          <View key={order.id} style={styles.orderCard}>
-            <View style={styles.orderHeader}>
-              <Text style={styles.orderDate}>Ngày đặt: {order.date}</Text>
-              <Text
-                style={[
-                  styles.orderStatus,
-                  { color: getStatusColor(order.status) },
-                ]}
-              >
-                {order.status}
-              </Text>
-            </View>
+        {orders.length > 0 ? (
+          orders.map((order) => (
+            <View key={order._id} style={styles.orderCard}>
+              <View style={styles.orderHeader}>
+                <Text style={styles.orderDate}>Ngày đặt: {formatDate(order.createdAt)}</Text>
+                <Text
+                  style={[
+                    styles.orderStatus,
+                    { color: getStatusColor(order.status) },
+                  ]}
+                >
+                  {order.status}
+                </Text>
+              </View>
 
-            <View style={styles.orderItems}>
-              {order.items.map((item, index) => (
-                <View key={index} style={styles.itemRow}>
-                  <View style={styles.itemInfo}>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemQuantity}>x{item.quantity}</Text>
+              <View style={styles.orderItems}>
+                {order.items.map((item, index) => (
+                  <View key={index} style={styles.itemRow}>
+                    <View style={styles.itemInfo}>
+                      <Text style={styles.itemName}>{item.product.name}</Text>
+                      <Text style={styles.itemQuantity}>x{item.quantity}</Text>
+                    </View>
+                    <Text style={styles.itemPrice}>{item.price.toLocaleString('vi-VN')}đ</Text>
                   </View>
-                  <Text style={styles.itemPrice}>{item.price}</Text>
-                </View>
-              ))}
-            </View>
+                ))}
+              </View>
 
-            <View style={styles.orderFooter}>
-              <Text style={styles.totalText}>Tổng tiền:</Text>
-              <Text style={styles.totalAmount}>{order.total}</Text>
-            </View>
+              <View style={styles.orderFooter}>
+                <Text style={styles.totalText}>Tổng tiền:</Text>
+                <Text style={styles.totalAmount}>{order.totalAmount.toLocaleString('vi-VN')}đ</Text>
+              </View>
 
-            {(order.status === 'Chờ xác nhận') && (
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => handleCancelOrder(order.id)}
-              >
-                <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
-              </TouchableOpacity>
-            )}
+              {(order.status === 'Chờ xác nhận') && (
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancelOrder(order._id)}
+                  disabled={cancelingOrderId === order._id}
+                >
+                  {cancelingOrderId === order._id ? (
+                    <ActivityIndicator size="small" color="#f44336" />
+                  ) : (
+                    <Text style={styles.cancelButtonText}>Hủy đơn hàng</Text>
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Icon name="document-text-outline" size={60} color="#ccc" />
+            <Text style={styles.emptyText}>Bạn chưa có đơn hàng nào</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
     </View>
   );
@@ -156,6 +252,12 @@ const OrderHistoryScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
   header: {
@@ -180,6 +282,16 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 16,
   },
   orderCard: {
     backgroundColor: '#fff',
@@ -263,6 +375,8 @@ const styles = StyleSheet.create({
     padding: 12,
     alignItems: 'center',
     marginTop: 12,
+    height: 45,
+    justifyContent: 'center',
   },
   cancelButtonText: {
     color: '#f44336',

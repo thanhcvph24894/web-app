@@ -4,12 +4,11 @@ const Product = require('../models/Product');
 class CategoryService {
     async getAllCategories() {
         return Category.find()
-            .populate('parent', 'name')
             .sort({ name: 1 });
     }
 
     async getCategoryById(id) {
-        const category = await Category.findById(id).populate('parent', 'name');
+        const category = await Category.findById(id);
         if (!category) throw new Error('Không tìm thấy danh mục');
         return category;
     }
@@ -48,12 +47,12 @@ class CategoryService {
         return category;
     }
 
-    async hasChildren(id) {
-        return (await Category.countDocuments({ parent: id })) > 0;
-    }
-
-    async hasProducts(id) {
-        return (await Product.countDocuments({ category: id })) > 0;
+    /**
+     * Kiểm tra danh mục có chứa sản phẩm không
+     */
+    async hasProducts(categoryId) {
+        const productCount = await Product.countDocuments({ category: categoryId });
+        return productCount > 0;
     }
 }
 

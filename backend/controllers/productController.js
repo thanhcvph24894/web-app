@@ -190,7 +190,9 @@ class ProductController {
             price: parseFloat(body.price.replace(/[^\d]/g, '')),
             stock: parseInt(body.stock),
             category: body.category,
-            isActive: body.isActive === 'on'
+            isActive: body.isActive === 'on',
+            colors: body.colors ? (Array.isArray(body.colors) ? body.colors : body.colors.split(',').map(c => c.trim())) : [],
+            sizes: body.sizes ? (Array.isArray(body.sizes) ? body.sizes : body.sizes.split(',').map(s => s.trim())) : []
         };
     }
 

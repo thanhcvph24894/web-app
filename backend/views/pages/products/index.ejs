@@ -14,10 +14,11 @@
                         <tr>
                             <th width="5%">STT</th>
                             <th width="15%">Tên sản phẩm</th>
-                            <th width="15%">Danh mục</th>
+                            <th width="10%">Danh mục</th>
                             <th width="10%">Giá</th>
-                            <th width="10%">Tồn kho</th>
-                            <th width="15%">Hình ảnh</th>
+                            <th width="8%">Tồn kho</th>
+                            <th width="8%">Thuộc tính</th>
+                            <th width="12%">Hình ảnh</th>
                             <th width="10%">Trạng thái</th>
                             <th width="10%">Thao tác</th>
                         </tr>
@@ -48,6 +49,31 @@
                                     <span class="badge <%= product.stock > 0 ? 'bg-success' : 'bg-danger' %>">
                                         <%= product.stock %>
                                     </span>
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        <% if(product.colors && product.colors.length > 0) { %>
+                                            <div><strong>Màu:</strong> 
+                                                <% product.colors.slice(0, 3).forEach((color, i) => { %>
+                                                    <span class="badge bg-secondary"><%= color %></span>
+                                                <% }) %>
+                                                <% if(product.colors.length > 3) { %>
+                                                    <span class="badge bg-secondary">+<%= product.colors.length - 3 %></span>
+                                                <% } %>
+                                            </div>
+                                        <% } %>
+                                        
+                                        <% if(product.sizes && product.sizes.length > 0) { %>
+                                            <div class="mt-1"><strong>Size:</strong> 
+                                                <% product.sizes.slice(0, 3).forEach((size, i) => { %>
+                                                    <span class="badge bg-secondary"><%= size %></span>
+                                                <% }) %>
+                                                <% if(product.sizes.length > 3) { %>
+                                                    <span class="badge bg-secondary">+<%= product.sizes.length - 3 %></span>
+                                                <% } %>
+                                            </div>
+                                        <% } %>
+                                    </div>
                                 </td>
                                 <td>
                                     <% if(product.images && product.images.length> 0) { %>

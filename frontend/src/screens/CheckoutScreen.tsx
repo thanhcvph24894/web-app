@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,12 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, CartItem } from '../types/navigation';
+import cartService, { Cart } from '../services/cart-service';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
@@ -21,8 +23,9 @@ type ShippingInfo = {
   note: string;
 };
 
-const CheckoutScreen = ({ navigation, route }: Props) => {
-  const { cartItems } = route.params;
+const CheckoutScreen = ({ navigation }: Props) => {
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: '',
     phone: '',
@@ -32,21 +35,66 @@ const CheckoutScreen = ({ navigation, route }: Props) => {
   });
   const [selectedPayment, setSelectedPayment] = useState<'cod' | 'banking'>('cod');
 
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  const fetchCart = async () => {
+    setLoading(true);
+    try {
+      const response = await cartService.getCart();
+      
+      // Xử lý lỗi 401 - Unauthorized
+      if (response.unauthorizedError) {
+        Alert.alert(
+          'Thông báo',
+          'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => navigation.navigate('Login')
+            }
+          ]
+        );
+        setLoading(false);
+        return;
+      }
+      
+      if (response.success && response.data) {
+        setCart(response.data);
+      } else {
+        Alert.alert('Lỗi', 'Không thể tải giỏ hàng');
+      }
+    } catch (error) {
+      console.error('Lỗi lấy giỏ hàng:', error);
+      Alert.alert('Lỗi', 'Không thể tải giỏ hàng. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calculateSubtotal = () => {
-    return cartItems
-      .reduce((total, item) => {
-        const price = parseInt(item.price.replace(/\D/g, ''));
-        return total + price * item.quantity;
-      }, 0);
+    if (!cart || !cart.items || cart.items.length === 0) {
+      return 0;
+    }
+    
+    return cart.items.reduce((total: number, item) => {
+      return total + (item.price * item.quantity);
+    }, 0);
   };
 
   const shippingFee = 30000; // Phí ship cố định
   const total = calculateSubtotal() + shippingFee;
 
   const handlePlaceOrder = () => {
+    if (!cart || !cart.items || cart.items.length === 0) {
+      Alert.alert('Lỗi', 'Giỏ hàng trống, không thể đặt hàng');
+      return;
+    }
+    
     // Xử lý đặt hàng ở đây
     console.log('Order placed:', {
-      items: cartItems,
+      items: cart.items,
       shipping: shippingInfo,
       payment: selectedPayment,
       total,

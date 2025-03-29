@@ -12,11 +12,6 @@ const categorySchema = new mongoose.Schema({
         unique: true
     },
     description: String,
-    parent: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        default: null
-    },
     image: String,
     isActive: {
         type: Boolean,

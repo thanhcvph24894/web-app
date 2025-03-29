@@ -1,4 +1,4 @@
-import axios, {AxiosPromise} from 'axios';
+import axios from 'axios';
 
 const ROOT_HTTP = 'http://10.0.2.2:5001/api/v1/';
 type RequestMethod = 'POST' | 'GET' | 'PUT' | 'DELETE';
@@ -18,10 +18,11 @@ export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   message?: string;
+  unauthorizedError?: boolean;
 }
 
 // Request không cần xác thực
-export const request = <T>(
+export const request = <T = any>(
   url: string,
   method: RequestMethod = 'GET',
   data?: object,
@@ -37,17 +38,35 @@ export const request = <T>(
       ...headers,
       'Content-Type': 'application/json',
     },
-  });
+  })
+    .then(response => response.data)
+    .catch(error => {
+      console.error('API Error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Lỗi kết nối đến máy chủ',
+      };
+    });
 };
 
 // Request cần xác thực
-export const authRequest = <T>(
+export const authRequest = <T = any>(
   url: string,
   method: RequestMethod = 'GET',
   data?: object | null,
   headers?: object | null,
   params?: object,
 ): Promise<ApiResponse<T>> => {
+  // Kiểm tra token trước khi gọi API
+  if (!token) {
+    console.warn('Không có token để gọi API:', url);
+    return Promise.resolve({
+      success: false,
+      message: 'Bạn cần đăng nhập để thực hiện chức năng này',
+      unauthorizedError: true,
+    });
+  }
+
   return axios({
     method,
     url,
@@ -60,17 +79,45 @@ export const authRequest = <T>(
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-  });
+  })
+    .then(response => response.data)
+    .catch(error => {
+      console.error('API Auth Error:', error);
+      
+      // Xử lý lỗi 401 - Unauthorized
+      if (error.response && error.response.status === 401) {
+        return {
+          success: false,
+          message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại',
+          unauthorizedError: true,
+        };
+      }
+      
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Lỗi kết nối đến máy chủ',
+      };
+    });
 };
 
 // Request gửi form data có xác thực
-export const authRequestFormData = <T>(
+export const authRequestFormData = <T = any>(
   url: string,
   method: RequestMethod = 'GET',
   data?: object,
   headers?: object,
   params?: object,
 ): Promise<ApiResponse<T>> => {
+  // Kiểm tra token trước khi gọi API
+  if (!token) {
+    console.warn('Không có token để gọi API:', url);
+    return Promise.resolve({
+      success: false,
+      message: 'Bạn cần đăng nhập để thực hiện chức năng này',
+      unauthorizedError: true,
+    });
+  }
+  
   return axios({
     method,
     url,
@@ -83,14 +130,32 @@ export const authRequestFormData = <T>(
       'Content-Type': 'multipart/form-data',
       Authorization: `Bearer ${token}`,
     },
-  });
+  })
+    .then(response => response.data)
+    .catch(error => {
+      console.error('API Form Data Error:', error);
+      
+      // Xử lý lỗi 401 - Unauthorized
+      if (error.response && error.response.status === 401) {
+        return {
+          success: false,
+          message: 'Phiên đăng nhập hết hạn, vui lòng đăng nhập lại',
+          unauthorizedError: true,
+        };
+      }
+      
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Lỗi kết nối đến máy chủ',
+      };
+    });
 };
 
 // Kiểm tra kết nối API
 export const testConnection = async () => {
   try {
-    const response = await fetch(ROOT_HTTP);
-    return response.ok;
+    const response = await axios.get(ROOT_HTTP);
+    return response.status === 200;
   } catch (error) {
     console.error('Lỗi kết nối API:', error);
     return false;
@@ -131,16 +196,16 @@ axios.interceptors.response.use(
         URL: response.config.url,
       });
     }
-    return response.data;
+    return response;
   },
   error => {
     if (__DEV__) {
       console.log(
         '%c [API Response Error]',
         'color: red; font-weight: bold',
-        error.response,
+        error.response || error,
       );
     }
-    return error.response;
+    return Promise.reject(error);
   },
 );

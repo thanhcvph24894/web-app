@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,31 +7,93 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
+import { authService } from '../services';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'EditProfile'>;
 };
 
+type UserProfile = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+};
+
 const EditProfileScreen = ({ navigation }: Props) => {
-  const [formData, setFormData] = useState({
-    fullName: 'Nguyễn Văn A',
-    email: 'nguyenvana@example.com',
-    phone: '0123456789',
-    address: '123 Đường ABC, Quận XYZ, TP.HCM',
-    bankName: '',
-    bankAccount: '',
-    bankNumber: '',
+  const [loading, setLoading] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [formData, setFormData] = useState<UserProfile>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
   });
 
-  const handleSave = () => {
-    // TODO: Implement save logic
-    Alert.alert('Thành công', 'Thông tin đã được cập nhật');
-    navigation.goBack();
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  const fetchUserProfile = async () => {
+    setLoading(true);
+    try {
+      const userData = await authService.getUser();
+      if (userData) {
+        setFormData({
+          name: userData.name || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          address: userData.address || '',
+        });
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin người dùng');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      Alert.alert('Lỗi', 'Vui lòng nhập họ và tên');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await authService.updateProfile({
+        name: formData.name,
+        phone: formData.phone,
+        address: formData.address,
+      });
+
+      if (response && response.success) {
+        Alert.alert('Thành công', 'Thông tin đã được cập nhật');
+        navigation.goBack();
+      } else {
+        Alert.alert('Lỗi', response?.message || 'Không thể cập nhật thông tin');
+      }
+    } catch (error) {
+      console.error('Lỗi khi cập nhật thông tin:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật thông tin. Vui lòng thử lại sau');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -43,8 +105,16 @@ const EditProfileScreen = ({ navigation }: Props) => {
           <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Chỉnh sửa thông tin</Text>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Lưu</Text>
+        <TouchableOpacity 
+          style={styles.saveButton} 
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator size="small" color="#007BFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>Lưu</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -56,8 +126,8 @@ const EditProfileScreen = ({ navigation }: Props) => {
             <Text style={styles.label}>Họ và tên</Text>
             <TextInput
               style={styles.input}
-              value={formData.fullName}
-              onChangeText={(text) => setFormData({ ...formData, fullName: text })}
+              value={formData.name}
+              onChangeText={(text) => setFormData({ ...formData, name: text })}
               placeholder="Nhập họ và tên"
             />
           </View>
@@ -65,12 +135,12 @@ const EditProfileScreen = ({ navigation }: Props) => {
           <View style={styles.inputContainer}>
             <Text style={styles.label}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: '#888' }]}
               value={formData.email}
-              onChangeText={(text) => setFormData({ ...formData, email: text })}
-              placeholder="Nhập email"
-              keyboardType="email-address"
+              editable={false}
+              placeholder="Email"
             />
+            <Text style={styles.fieldNote}>Email không thể thay đổi</Text>
           </View>
 
           <View style={styles.inputContainer}>
@@ -95,41 +165,6 @@ const EditProfileScreen = ({ navigation }: Props) => {
             />
           </View>
         </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin ngân hàng</Text>
-          
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Tên ngân hàng</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.bankName}
-              onChangeText={(text) => setFormData({ ...formData, bankName: text })}
-              placeholder="Nhập tên ngân hàng"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Tên chủ tài khoản</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.bankAccount}
-              onChangeText={(text) => setFormData({ ...formData, bankAccount: text })}
-              placeholder="Nhập tên chủ tài khoản"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Số tài khoản</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.bankNumber}
-              onChangeText={(text) => setFormData({ ...formData, bankNumber: text })}
-              placeholder="Nhập số tài khoản"
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
       </ScrollView>
     </View>
   );
@@ -138,6 +173,12 @@ const EditProfileScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: '#fff',
   },
   header: {
@@ -158,6 +199,8 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     padding: 8,
+    minWidth: 50,
+    alignItems: 'center',
   },
   saveButtonText: {
     color: '#007BFF',
@@ -190,6 +233,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
+  },
+  fieldNote: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
 });
 

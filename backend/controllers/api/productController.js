@@ -28,7 +28,7 @@ exports.getProducts = async (req, res) => {
 
         // Get products
         const products = await Product.find(conditions)
-            .select('name slug description price salePrice images category averageRating')
+            .select('name slug description price salePrice images category averageRating colors sizes')
             .populate('category', 'name slug')
             .sort('-createdAt')
             .skip((page - 1) * limit)

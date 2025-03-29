@@ -1,8 +1,8 @@
-import {request, authRequest} from './api-client';
+import { request } from './api-client';
 
+// Định nghĩa kiểu dữ liệu cho sản phẩm
 export interface Product {
-  id: string;
-  _id?: string;
+  _id: string;
   name: string;
   slug: string;
   description: string;
@@ -10,28 +10,36 @@ export interface Product {
   salePrice?: number;
   images: string[];
   category: {
-    id: string;
+    _id: string;
     name: string;
     slug: string;
   };
   averageRating: number;
-  specifications?: Array<{
-    name: string;
-    value: string;
-  }>;
+  sizes?: string[];
+  colors?: string[];
   stock?: number;
   sold?: number;
-  tags?: string[];
+}
+
+// Định nghĩa kiểu dữ liệu cho response
+export interface ProductResponse {
+  success: boolean;
+  data: Product;
+  message?: string;
 }
 
 export interface ProductListResponse {
-  products: Product[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
+  success: boolean;
+  data: {
+    products: Product[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    }
+  } | Product[];
+  message?: string;
 }
 
 export interface ProductListParams {
@@ -40,19 +48,21 @@ export interface ProductListParams {
   category?: string;
 }
 
+// Tạo service cho sản phẩm
 const productService = {
-  getProducts: (params?: ProductListParams) => {
+  // Lấy danh sách sản phẩm
+  getProducts: (page: number = 1, limit: number = 10, category?: string) => {
     let url = 'products';
     const queryParams: string[] = [];
 
-    if (params?.page) {
-      queryParams.push(`page=${params.page}`);
+    if (page) {
+      queryParams.push(`page=${page}`);
     }
-    if (params?.limit) {
-      queryParams.push(`limit=${params.limit}`);
+    if (limit) {
+      queryParams.push(`limit=${limit}`);
     }
-    if (params?.category) {
-      queryParams.push(`category=${params.category}`);
+    if (category) {
+      queryParams.push(`category=${category}`);
     }
 
     if (queryParams.length > 0) {
@@ -62,30 +72,19 @@ const productService = {
     return request<ProductListResponse>(url);
   },
 
+  // Lấy chi tiết sản phẩm
   getProductDetail: (slug: string) => {
-    return request<Product>(`products/${slug}`);
+    return request<ProductResponse>(`products/${slug}`);
   },
 
+  // Lấy sản phẩm nổi bật
   getFeaturedProducts: () => {
-    return request<Product[]>('products/featured');
+    return request<ProductListResponse>('products?featured=true');
   },
 
-  searchProducts: (keyword: string, params?: ProductListParams) => {
-    let url = 'products/search';
-    const queryParams: string[] = [`keyword=${keyword}`];
-
-    if (params?.page) {
-      queryParams.push(`page=${params.page}`);
-    }
-    if (params?.limit) {
-      queryParams.push(`limit=${params.limit}`);
-    }
-    if (params?.category) {
-      queryParams.push(`category=${params.category}`);
-    }
-
-    url = `${url}?${queryParams.join('&')}`;
-
+  // Tìm kiếm sản phẩm
+  searchProducts: (keyword: string, page: number = 1, limit: number = 10) => {
+    const url = `products/search?keyword=${keyword}&page=${page}&limit=${limit}`;
     return request<ProductListResponse>(url);
   },
 };

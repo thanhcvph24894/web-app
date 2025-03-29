@@ -43,6 +43,14 @@ const productSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    colors: [{
+        type: String,
+        trim: true
+    }],
+    sizes: [{
+        type: String,
+        trim: true
+    }],
     ratings: [{
         user: {
             type: mongoose.Schema.Types.ObjectId,

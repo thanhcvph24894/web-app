@@ -1,143 +1,332 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
+  FlatList,
   Image,
   TouchableOpacity,
-  ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
-import { CompositeNavigationProp } from '@react-navigation/native';
-import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, RootTabParamList, CartItem } from '../types/navigation';
+import Icon from 'react-native-vector-icons/Ionicons';
+import authService from '../services/auth-service';
+import cartService, { Cart } from '../services/cart-service';
+import { formatCurrency } from '../utils';
+import { CartItem, RootStackParamList, Product } from '../types/navigation';
 
-type Props = {
-  navigation: CompositeNavigationProp<
-    BottomTabNavigationProp<RootTabParamList, 'CartTab'>,
-    NativeStackNavigationProp<RootStackParamList>
-  >;
+type CartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+// Hàm ánh xạ từ item trong Cart sang CartItem
+const mapCartItemToCartItem = (item: Cart['items'][0]): CartItem => {
+  return {
+    _id: item._id,
+    product: {
+      id: item.product._id,
+      _id: item.product._id,
+      name: item.product.name,
+      slug: '', // Đặt giá trị mặc định
+      description: '', // Đặt giá trị mặc định
+      price: item.product.price,
+      salePrice: item.product.salePrice,
+      images: item.product.images,
+      category: {
+        id: '',
+        _id: '',
+        name: '',
+        slug: ''
+      },
+      averageRating: 0,
+      colors: [],
+      sizes: []
+    } as Product,
+    variant: item.variant,
+    quantity: item.quantity,
+    price: item.price
+  };
 };
 
-const mockCartItems: CartItem[] = [
-  {
-    id: 1,
-    name: 'Áo Thun Basic',
-    price: '199.000đ',
-    image: 'https://example.com/product1.jpg',
-    quantity: 2,
-    selectedSize: 'M',
-  },
-  {
-    id: 2,
-    name: 'Áo Polo Nam',
-    price: '299.000đ',
-    image: 'https://example.com/product2.jpg',
-    quantity: 1,
-    selectedSize: 'L',
-  },
-];
+const CartScreen = () => {
+  const navigation = useNavigation<CartScreenNavigationProp>();
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-const CartScreen = ({ navigation }: Props) => {
-  const [cartItems, setCartItems] = React.useState<CartItem[]>(mockCartItems);
+  useFocusEffect(
+    useCallback(() => {
+      checkAuth();
+    }, [])
+  );
 
-  const handleQuantityChange = (id: number, change: number) => {
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id
-          ? { ...item, quantity: Math.max(1, item.quantity + change) }
-          : item
-      )
+  const checkAuth = async () => {
+    try {
+      const isAuth = await authService.isAuthenticated();
+      setIsAuthenticated(isAuth);
+      if (isAuth) {
+        fetchCart();
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Lỗi kiểm tra đăng nhập:', error);
+      setLoading(false);
+    }
+  };
+
+  const fetchCart = async () => {
+    setLoading(true);
+    try {
+      // Kiểm tra đăng nhập trước khi lấy giỏ hàng
+      const isAuthenticated = await authService.isAuthenticated();
+      if (!isAuthenticated) {
+        setLoading(false);
+        Alert.alert(
+          'Thông báo',
+          'Vui lòng đăng nhập để xem giỏ hàng',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => navigation.navigate('Login')
+            }
+          ]
+        );
+        return;
+      }
+
+      const response = await cartService.getCart();
+      
+      if (response.unauthorizedError) {
+        // Xử lý lỗi phiên đăng nhập hết hạn
+        Alert.alert(
+          'Thông báo',
+          response.message || 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => {
+                // Đăng xuất trước khi chuyển đến màn hình đăng nhập
+                authService.logout();
+                navigation.navigate('Login');
+              }
+            }
+          ]
+        );
+        return;
+      }
+      
+      if (response.success && response.data) {
+        const cartData = response.data;
+        setCart(cartData as unknown as Cart);
+      } else {
+        setCart(null);
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải giỏ hàng:', error);
+      Alert.alert('Lỗi', 'Không thể tải giỏ hàng');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateQuantity = async (itemId: string, quantity: number) => {
+    try {
+      const response = await cartService.updateCartItem(itemId, quantity);
+      if (response && response.success && response.data) {
+        setCart(response.data as unknown as Cart);
+      }
+    } catch (error) {
+      console.error('Lỗi cập nhật số lượng:', error);
+      Alert.alert('Lỗi', 'Không thể cập nhật số lượng. Vui lòng thử lại sau.');
+    }
+  };
+
+  const handleRemoveItem = async (itemId: string) => {
+    Alert.alert(
+      'Xóa sản phẩm',
+      'Bạn có chắc chắn muốn xóa sản phẩm này khỏi giỏ hàng?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await cartService.removeCartItem(itemId);
+              if (response && response.success && response.data) {
+                setCart(response.data as unknown as Cart);
+              }
+            } catch (error) {
+              console.error('Lỗi xóa sản phẩm:', error);
+              Alert.alert('Lỗi', 'Không thể xóa sản phẩm. Vui lòng thử lại sau.');
+            }
+          },
+        },
+      ],
     );
   };
 
-  const handleRemoveItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const handleClearCart = () => {
+    if (!cart || cart.items.length === 0) return;
+
+    Alert.alert(
+      'Xóa giỏ hàng',
+      'Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?',
+      [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa tất cả',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await cartService.clearCart();
+              if (response && response.success && response.data) {
+                setCart(response.data as unknown as Cart);
+              }
+            } catch (error) {
+              console.error('Lỗi xóa giỏ hàng:', error);
+              Alert.alert('Lỗi', 'Không thể xóa giỏ hàng. Vui lòng thử lại sau.');
+            }
+          },
+        },
+      ],
+    );
   };
 
-  const calculateTotal = () => {
-    return cartItems
-      .reduce((total, item) => {
-        const price = parseInt(item.price.replace(/\D/g, ''));
-        return total + price * item.quantity;
-      }, 0)
-      .toLocaleString('vi-VN') + 'đ';
+  const handleCheckout = () => {
+    if (!cart || cart.items.length === 0) return;
+    // @ts-ignore
+    navigation.navigate('Checkout');
   };
 
-  const renderCartItem = (item: CartItem) => (
-    <View key={item.id} style={styles.cartItem}>
-      <Image source={{ uri: item.image }} style={styles.itemImage} />
-      <View style={styles.itemInfo}>
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemSize}>Size: {item.selectedSize}</Text>
-        <Text style={styles.itemPrice}>{item.price}</Text>
-        <View style={styles.quantityContainer}>
-          <TouchableOpacity
-            style={styles.quantityButton}
-            onPress={() => handleQuantityChange(item.id, -1)}
-          >
-            <Icon name="remove" size={20} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.quantity}>{item.quantity}</Text>
-          <TouchableOpacity
-            style={styles.quantityButton}
-            onPress={() => handleQuantityChange(item.id, 1)}
-          >
-            <Icon name="add" size={20} color="#000" />
-          </TouchableOpacity>
+  const renderCartItem = ({ item }: { item: CartItem }) => {
+    return (
+      <View style={styles.cartItem}>
+        <Image
+          source={{
+            uri: item.product.images && item.product.images.length > 0
+              ? item.product.images[0]
+              : 'https://via.placeholder.com/100',
+          }}
+          style={styles.productImage}
+        />
+        
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={2}>
+            {item.product.name}
+          </Text>
+          
+          {item.variant && (Object.keys(item.variant).length > 0) && (
+            <Text style={styles.variantText}>
+              {item.variant.color ? `Màu: ${item.variant.color}` : ''}
+              {item.variant.color && item.variant.size ? ' | ' : ''}
+              {item.variant.size ? `Kích thước: ${item.variant.size}` : ''}
+            </Text>
+          )}
+          
+          <Text style={styles.productPrice}>
+            {formatCurrency(item.price)}
+          </Text>
+          
+          <View style={styles.quantityContainer}>
+            <TouchableOpacity
+              style={styles.quantityButton}
+              onPress={() => {
+                if (item.quantity > 1) {
+                  handleUpdateQuantity(item._id, item.quantity - 1);
+                }
+              }}>
+              <Icon name="remove" size={18} color="#333" />
+            </TouchableOpacity>
+            
+            <Text style={styles.quantityText}>{item.quantity}</Text>
+            
+            <TouchableOpacity
+              style={styles.quantityButton}
+              onPress={() => handleUpdateQuantity(item._id, item.quantity + 1)}>
+              <Icon name="add" size={18} color="#333" />
+            </TouchableOpacity>
+          </View>
         </View>
+        
+        <TouchableOpacity
+          style={styles.removeButton}
+          onPress={() => handleRemoveItem(item._id)}>
+          <Icon name="trash-outline" size={22} color="#ff3b30" />
+        </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => handleRemoveItem(item.id)}
-      >
-        <Icon name="trash-outline" size={24} color="#ff4444" />
-      </TouchableOpacity>
-    </View>
-  );
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyText}>Vui lòng đăng nhập để xem giỏ hàng</Text>
+        <TouchableOpacity
+          style={styles.loginButton}
+          // @ts-ignore
+          onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.loginButtonText}>Đăng nhập</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!cart || cart.items.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Icon name="cart-outline" size={80} color="#ccc" />
+        <Text style={styles.emptyText}>Giỏ hàng của bạn đang trống</Text>
+        <TouchableOpacity
+          style={styles.shopButton}
+          // @ts-ignore
+          onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.shopButtonText}>Tiếp tục mua sắm</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-back" size={24} color="#000" />
+        <Text style={styles.headerTitle}>Giỏ hàng của bạn</Text>
+        <TouchableOpacity onPress={handleClearCart}>
+          <Text style={styles.clearButton}>Xóa tất cả</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Giỏ hàng</Text>
-        <View style={{ width: 24 }} />
       </View>
 
-      <ScrollView style={styles.content}>
-        {cartItems.length > 0 ? (
-          cartItems.map(renderCartItem)
-        ) : (
-          <View style={styles.emptyCart}>
-            <Icon name="cart-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyCartText}>Giỏ hàng trống</Text>
-            <TouchableOpacity
-              style={styles.continueShopping}
-              onPress={() => navigation.navigate('Main', { screen: 'HomeTab' })}
-            >
-              <Text style={styles.continueShoppingText}>Tiếp tục mua sắm</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+      <FlatList
+        data={cart?.items.map(item => mapCartItemToCartItem(item))}
+        renderItem={renderCartItem}
+        keyExtractor={item => item._id}
+        contentContainerStyle={styles.itemList}
+      />
 
-      {cartItems.length > 0 && (
-        <View style={styles.footer}>
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalLabel}>Tổng cộng:</Text>
-            <Text style={styles.totalAmount}>{calculateTotal()}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.checkoutButton}
-            onPress={() => navigation.navigate('Checkout', { cartItems })}
-          >
-            <Text style={styles.checkoutButtonText}>Thanh toán</Text>
-          </TouchableOpacity>
+      <View style={styles.summaryContainer}>
+        <View style={styles.row}>
+          <Text style={styles.summaryLabel}>Tổng sản phẩm:</Text>
+          <Text style={styles.summaryValue}>{cart?.items.length}</Text>
         </View>
-      )}
+        
+        <View style={styles.row}>
+          <Text style={styles.summaryLabel}>Tổng tiền:</Text>
+          <Text style={styles.totalAmount}>{formatCurrency(cart?.totalPrice || 0)}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
+          <Text style={styles.checkoutButtonText}>Tiến hành đặt hàng</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -145,179 +334,155 @@ const CartScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderBottomColor: '#eee',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
-  content: {
-    flex: 1,
-    padding: 16,
+  clearButton: {
+    color: '#ff3b30',
+  },
+  itemList: {
+    paddingVertical: 10,
   },
   cartItem: {
     flexDirection: 'row',
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
     backgroundColor: '#fff',
-    marginBottom: 16,
-    position: 'relative',
-  },
-  itemImage: {
-    width: 100,
-    height: 100,
+    marginHorizontal: 10,
+    marginVertical: 5,
     borderRadius: 8,
-    marginRight: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  itemInfo: {
+  productImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 4,
+  },
+  productInfo: {
     flex: 1,
+    marginLeft: 10,
     justifyContent: 'space-between',
   },
-  itemName: {
+  productName: {
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: 4,
   },
-  itemSize: {
+  variantText: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 4,
-    backgroundColor: '#f5f5f5',
-    padding: 4,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
+    marginVertical: 4,
   },
-  itemPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#007BFF',
+  productPrice: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#2196F3',
   },
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#f5f5f5',
-    padding: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
+    marginTop: 5,
   },
   quantityButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    backgroundColor: '#f0f0f0',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
-  quantity: {
+  quantityText: {
     fontSize: 16,
-    fontWeight: '500',
-    minWidth: 24,
+    marginHorizontal: 10,
+    minWidth: 20,
     textAlign: 'center',
   },
   removeButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 32,
-    height: 32,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#ff4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    padding: 5,
   },
-  footer: {
-    padding: 16,
+  summaryContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    backgroundColor: '#fff',
+    borderTopColor: '#eee',
   },
-  totalContainer: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    marginBottom: 10,
   },
-  totalLabel: {
+  summaryLabel: {
     fontSize: 16,
     color: '#666',
   },
+  summaryValue: {
+    fontSize: 16,
+  },
   totalAmount: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#007BFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2196F3',
   },
   checkoutButton: {
-    backgroundColor: '#000',
-    padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#2196F3',
+    borderRadius: 8,
+    padding: 15,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#000',
+    marginTop: 10,
   },
   checkoutButtonText: {
     color: '#fff',
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '600',
   },
-  emptyCart: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    backgroundColor: '#f5f5f5',
-    margin: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  emptyCartText: {
+  emptyText: {
     fontSize: 18,
-    color: '#666',
-    marginTop: 16,
-    marginBottom: 24,
+    color: '#999',
+    marginTop: 20,
+    marginBottom: 20,
   },
-  continueShopping: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#000',
-    backgroundColor: '#fff',
+  shopButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
-  continueShoppingText: {
-    color: '#000',
+  shopButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
     fontSize: 16,
-    fontWeight: '500',
+  },
+  loginButton: {
+    backgroundColor: '#2196F3',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

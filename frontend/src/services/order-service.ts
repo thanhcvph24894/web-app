@@ -1,76 +1,100 @@
 import { authRequest } from './api-client';
-import { Product } from './product-service';
 
+// Định nghĩa kiểu dữ liệu cho item trong đơn hàng
 export interface OrderItem {
-  product: string | Product;
+  _id: string;
+  product: {
+    _id: string;
+    name: string;
+    price: number;
+    images?: string[];
+  };
   quantity: number;
   price: number;
-  variant?: {
-    size?: string;
-    color?: string;
-  };
 }
 
+// Định nghĩa kiểu dữ liệu cho địa chỉ giao hàng
 export interface ShippingAddress {
   fullName: string;
   phone: string;
   address: string;
-  ward?: string;
-  district?: string;
-  city?: string;
+  city: string;
+  district: string;
+  ward: string;
   note?: string;
 }
 
-export type PaymentMethod = 'COD' | 'VNPAY' | 'MOMO';
-export type OrderStatus = 'Chờ xác nhận' | 'Đã xác nhận' | 'Đang giao hàng' | 'Đã giao hàng' | 'Đã hủy';
-export type PaymentStatus = 'Chưa thanh toán' | 'Đã thanh toán' | 'Hoàn tiền';
-
+// Định nghĩa kiểu dữ liệu cho đơn hàng
 export interface Order {
-  id: string;
+  _id: string;
+  orderNumber: string;
   user: string;
   items: OrderItem[];
   totalAmount: number;
+  status: string;
+  paymentMethod: string;
   shippingAddress: ShippingAddress;
-  status: OrderStatus;
-  paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus;
-  shippingFee?: number;
-  discount?: number;
-  coupon?: string;
+  isPaid: boolean;
+  paidAt?: string;
+  isDelivered: boolean;
+  deliveredAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CreateOrderRequest {
-  items: Array<{
-    product: string;
-    quantity: number;
-    variant?: {
-      size?: string;
-      color?: string;
-    };
-  }>;
-  shippingAddress: ShippingAddress;
-  paymentMethod: PaymentMethod;
-  couponCode?: string;
+// Định nghĩa kiểu dữ liệu cho response trả về danh sách đơn hàng
+export interface OrdersResponse {
+  orders: Order[];
+  pagination?: {
+    page: number;
+    limit: number;
+    totalPages: number;
+    totalItems: number;
+  };
 }
 
+// Định nghĩa kiểu dữ liệu cho response trả về một đơn hàng
+export interface OrderResponse {
+  order: Order;
+}
+
+// Định nghĩa kiểu dữ liệu cho request tạo đơn hàng
+export interface CreateOrderData {
+  items?: { productId: string; quantity: number; variant?: any }[];
+  shippingAddress: ShippingAddress;
+  paymentMethod: string;
+}
+
+// Tạo service cho đơn hàng
 const orderService = {
-  getOrders: () => {
-    return authRequest<Order[]>('orders');
+  // Lấy tất cả đơn hàng
+  getOrders: async (page: number = 1, limit: number = 10) => {
+    return authRequest<OrdersResponse>(`v1/orders?page=${page}&limit=${limit}`);
   },
-  
-  getOrderDetail: (orderId: string) => {
-    return authRequest<Order>(`orders/${orderId}`);
+
+  // Lấy chi tiết đơn hàng theo id
+  getOrderById: async (orderId: string) => {
+    return authRequest<OrderResponse>(`v1/orders/${orderId}`);
   },
-  
-  createOrder: (orderData: CreateOrderRequest) => {
-    return authRequest<Order>('orders', 'POST', orderData);
+
+  // Tạo đơn hàng mới
+  createOrder: async (orderData: CreateOrderData) => {
+    return authRequest<OrderResponse>('v1/orders', 'POST', orderData);
   },
-  
-  cancelOrder: (orderId: string) => {
-    return authRequest<Order>(`orders/${orderId}/cancel`, 'PUT');
-  }
+
+  // Hủy đơn hàng
+  cancelOrder: async (orderId: string) => {
+    return authRequest<OrderResponse>(`v1/orders/${orderId}/cancel`, 'PUT');
+  },
+
+  // Thanh toán đơn hàng
+  payOrder: async (orderId: string, paymentDetails: any) => {
+    return authRequest<OrderResponse>(
+      `v1/orders/${orderId}/pay`,
+      'PUT',
+      paymentDetails,
+    );
+  },
 };
 
 export default orderService; 

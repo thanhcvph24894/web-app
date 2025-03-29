@@ -1,16 +1,44 @@
 export type Product = {
-    id: number;
+    id?: string;
+    _id: string;
     name: string;
-    price: string;
-    image: string;
-    rating?: number;
-    reviews?: number;
-    description?: string;
+    slug: string;
+    description: string;
+    price: number;
+    salePrice?: number;
+    images: string[];
+    category: {
+        id?: string;
+        _id: string;
+        name: string;
+        slug: string;
+    };
+    averageRating: number;
+    colors: string[];
+    sizes: string[];
+    stock?: number;
+    sold?: number;
 };
 
-export type CartItem = Product & {
+export type Category = {
+    id?: string;
+    _id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    image?: string;
+    productCount?: number;
+};
+
+export type CartItem = {
+    _id: string;
+    product: Product;
+    variant?: {
+        color?: string;
+        size?: string;
+    };
     quantity: number;
-    selectedSize: string;
+    price: number;
 };
 
 export type RootTabParamList = {
@@ -23,9 +51,14 @@ export type RootStackParamList = {
     Login: undefined;
     Register: undefined;
     Main: { screen?: keyof RootTabParamList };
-    ProductDetail: { product: Product };
+    ProductDetail: { productSlug: string };
+    CategoryProducts: { categorySlug: string, categoryName: string };
     Cart: undefined;
-    Checkout: { cartItems: CartItem[] };
+    Checkout: undefined;
     EditProfile: undefined;
     OrderHistory: undefined;
+    Profile: undefined;
+    ChangePassword: undefined;
+    Notifications: undefined;
+    Orders: undefined;
 }; 

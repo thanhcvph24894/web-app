@@ -10,34 +10,35 @@ const addBaseUrlToImages = (category) => {
     return category;
 };
 
-// @desc    Lấy danh sách danh mục đang active
-// @route   GET /api/v1/categories
-// @access  Public
+/**
+ * Lấy danh sách tất cả danh mục
+ */
 exports.getCategories = async (req, res) => {
     try {
-        const categories = await Category.find({ isActive: true })
+        let query = { isActive: true };
+        
+        const categories = await Category.find(query)
             .select('name slug description image')
-            .sort('order');
-
+            .sort({ name: 1 });
+        
         // Thêm base URL vào images
         const categoriesWithFullUrls = categories.map(cat => addBaseUrlToImages(cat));
-
+        
         res.json({
             success: true,
             data: categoriesWithFullUrls
         });
     } catch (error) {
-        console.error('Lỗi lấy danh mục:', error);
         res.status(500).json({
             success: false,
-            message: 'Lỗi server'
+            message: error.message
         });
     }
 };
 
-// @desc    Lấy danh sách các danh mục có sản phẩm
-// @route   GET /api/v1/categories/with-products
-// @access  Public
+/**
+ * Lấy danh sách các danh mục có sản phẩm
+ */
 exports.getCategoriesWithProducts = async (req, res) => {
     try {
         console.log('API getCategoriesWithProducts đã được gọi');
@@ -45,7 +46,7 @@ exports.getCategoriesWithProducts = async (req, res) => {
         // Lấy tất cả danh mục
         const categories = await Category.find({ isActive: true })
             .select('name slug description image')
-            .sort('order')
+            .sort('name')
             .lean();
 
         // Lọc danh mục có sản phẩm
@@ -79,9 +80,9 @@ exports.getCategoriesWithProducts = async (req, res) => {
     }
 };
 
-// @desc    Lấy chi tiết danh mục kèm sản phẩm
-// @route   GET /api/v1/categories/:slug
-// @access  Public
+/**
+ * Lấy chi tiết danh mục kèm sản phẩm
+ */
 exports.getCategoryWithProducts = async (req, res) => {
     try {
         // Lấy thông tin danh mục

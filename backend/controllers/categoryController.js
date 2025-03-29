@@ -35,7 +35,6 @@ class CategoryController {
         const data = {
             name: body.name.trim(),
             description: body.description ? body.description.trim() : '',
-            parent: body.parent || null,
             isActive: body.isActive === 'on',
             slug: slugify(body.name, { lower: true, locale: 'vi', strict: true })
         };
@@ -67,16 +66,15 @@ class CategoryController {
                 messages: req.flash()
             });
         } catch (error) {
-            next(error);
+            req.flash('error', 'Có lỗi xảy ra: ' + error.message);
+            res.redirect('/admin/dashboard');
         }
     }
 
     async showCreateForm(req, res, next) {
         try {
-            const parentCategories = await categoryService.getAllCategories();
             res.render('pages/categories/create', { 
                 title: 'Thêm danh mục mới',
-                parentCategories,
                 messages: req.flash()
             });
         } catch (error) {
@@ -94,12 +92,6 @@ class CategoryController {
             const existingCategory = await categoryService.findByName(categoryData.name);
             if (existingCategory) throw new Error('Tên danh mục đã tồn tại');
 
-            // Kiểm tra parent category
-            if (categoryData.parent) {
-                const parentExists = await categoryService.getCategoryById(categoryData.parent);
-                if (!parentExists) throw new Error('Danh mục cha không tồn tại');
-            }
-
             await categoryService.createCategory(categoryData);
             req.flash('success', 'Tạo danh mục thành công');
             res.redirect('/categories');
@@ -110,15 +102,11 @@ class CategoryController {
 
     async showEditForm(req, res, next) {
         try {
-            const [category, parentCategories] = await Promise.all([
-                categoryService.getCategoryById(req.params.id),
-                categoryService.getAllCategories()
-            ]);
+            const category = await categoryService.getCategoryById(req.params.id);
 
             res.render('pages/categories/edit', {
                 title: 'Chỉnh sửa danh mục',
                 category,
-                parentCategories: parentCategories.filter(c => !c._id.equals(category._id)),
                 messages: req.flash()
             });
         } catch (error) {
@@ -138,15 +126,6 @@ class CategoryController {
             // Kiểm tra tên mới có bị trùng
             const duplicateName = await categoryService.findByName(updateData.name, categoryId);
             if (duplicateName) throw new Error('Tên danh mục đã tồn tại');
-
-            // Kiểm tra parent category
-            if (updateData.parent) {
-                if (updateData.parent === categoryId) {
-                    throw new Error('Không thể chọn chính danh mục này làm danh mục cha');
-                }
-                const parentExists = await categoryService.getCategoryById(updateData.parent);
-                if (!parentExists) throw new Error('Danh mục cha không tồn tại');
-            }
 
             await categoryService.updateCategory(categoryId, updateData);
             req.flash('success', 'Cập nhật danh mục thành công');
@@ -171,17 +150,7 @@ class CategoryController {
             const category = await categoryService.getCategoryById(categoryId);
 
             // Kiểm tra ràng buộc xóa
-            const [hasChildren, hasProducts] = await Promise.all([
-                categoryService.hasChildren(categoryId),
-                categoryService.hasProducts(categoryId)
-            ]);
-
-            if (hasChildren) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: 'Không thể xóa danh mục này vì có chứa danh mục con' 
-                });
-            }
+            const hasProducts = await categoryService.hasProducts(categoryId);
 
             if (hasProducts) {
                 return res.status(400).json({ 

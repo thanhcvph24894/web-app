@@ -1,7 +1,7 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 import LoginScreen from '../screens/LoginScreen';
@@ -10,20 +10,22 @@ import HomeScreen from '../screens/HomeScreen';
 import CartScreen from '../screens/CartScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
+import CategoryProductsScreen from '../screens/CategoryProductsScreen';
 import CheckoutScreen from '../screens/CheckoutScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import OrderHistoryScreen from '../screens/OrderHistoryScreen';
-import { RootStackParamList, RootTabParamList } from '../types/navigation';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
+import {RootStackParamList, RootTabParamList} from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-const TabNavigator = () => {
+const MainTabs = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName;
+      screenOptions={({route}) => ({
+        tabBarIcon: ({focused, color, size}) => {
+          let iconName = '';
 
           if (route.name === 'HomeTab') {
             iconName = focused ? 'home' : 'home-outline';
@@ -33,26 +35,26 @@ const TabNavigator = () => {
             iconName = focused ? 'person' : 'person-outline';
           }
 
-          return <Icon name={iconName as string} size={size} color={color} />;
+          return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007BFF',
-        tabBarInactiveTintColor: 'gray',
-      })}
-    >
+        tabBarActiveTintColor: '#000',
+        tabBarInactiveTintColor: '#666',
+        headerShown: false,
+      })}>
       <Tab.Screen
         name="HomeTab"
         component={HomeScreen}
-        options={{ title: 'Trang chủ' }}
+        options={{tabBarLabel: 'Trang chủ'}}
       />
       <Tab.Screen
         name="CartTab"
         component={CartScreen}
-        options={{ title: 'Giỏ hàng' }}
+        options={{tabBarLabel: 'Giỏ hàng'}}
       />
       <Tab.Screen
         name="ProfileTab"
         component={ProfileScreen}
-        options={{ title: 'Tài khoản' }}
+        options={{tabBarLabel: 'Tài khoản'}}
       />
     </Tab.Navigator>
   );
@@ -61,20 +63,24 @@ const TabNavigator = () => {
 const AppNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {backgroundColor: '#fff'},
+        }}>
+        <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Main" component={TabNavigator} />
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-        <Stack.Screen name="Checkout" component={CheckoutScreen} />
-        <Stack.Screen 
-          name="EditProfile" 
-          component={EditProfileScreen}
-          options={{
-            headerShown: false
-          }}
+        <Stack.Screen
+          name="CategoryProducts"
+          component={CategoryProductsScreen}
         />
+        <Stack.Screen name="Cart" component={CartScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

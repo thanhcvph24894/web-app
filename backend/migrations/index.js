@@ -91,19 +91,24 @@ const runMigrations = async () => {
         if (categories.length === 0) {
             const defaultCategories = [
                 {
-                    name: 'Nam',
-                    slug: 'nam',
-                    description: 'Thời trang nam'
+                    name: 'Thời trang nam',
+                    slug: 'thoi-trang-nam',
+                    description: 'Tất cả sản phẩm thời trang dành cho nam'
                 },
                 {
-                    name: 'Nữ',
-                    slug: 'nu',
-                    description: 'Thời trang nữ'
+                    name: 'Thời trang nữ',
+                    slug: 'thoi-trang-nu',
+                    description: 'Tất cả sản phẩm thời trang dành cho nữ'
                 },
                 {
-                    name: 'Trẻ em',
-                    slug: 'tre-em',
-                    description: 'Thời trang trẻ em'
+                    name: 'Phụ kiện',
+                    slug: 'phu-kien',
+                    description: 'Các phụ kiện thời trang'
+                },
+                {
+                    name: 'Giày dép',
+                    slug: 'giay-dep',
+                    description: 'Giày dép các loại'
                 }
             ];
 
@@ -111,46 +116,12 @@ const runMigrations = async () => {
                 await Category.create(category);
             }
             console.log('Đã tạo danh mục mặc định');
-
-            // Tạo danh mục con
-            const parentCategories = await Category.find();
-            const subCategories = [
-                {
-                    name: 'Áo nam',
-                    slug: 'ao-nam',
-                    description: 'Áo thời trang nam',
-                    parent: parentCategories[0]._id
-                },
-                {
-                    name: 'Quần nam',
-                    slug: 'quan-nam',
-                    description: 'Quần thời trang nam',
-                    parent: parentCategories[0]._id
-                },
-                {
-                    name: 'Áo nữ',
-                    slug: 'ao-nu',
-                    description: 'Áo thời trang nữ',
-                    parent: parentCategories[1]._id
-                },
-                {
-                    name: 'Quần nữ',
-                    slug: 'quan-nu',
-                    description: 'Quần thời trang nữ',
-                    parent: parentCategories[1]._id
-                }
-            ];
-
-            for (const subCategory of subCategories) {
-                await Category.create(subCategory);
-            }
-            console.log('Đã tạo danh mục con');
         }
 
         // Tạo sản phẩm mẫu
         const products = await Product.find();
         if (products.length === 0) {
-            const categories = await Category.find({ parent: { $ne: null } });
+            const categories = await Category.find();
             const sampleProducts = [
                 {
                     name: 'Áo thun nam basic',
@@ -161,29 +132,48 @@ const runMigrations = async () => {
                     images: ['/uploads/products/ao-thun-nam-1.jpg'],
                     stock: 100,
                     sold: 0,
-                    isActive: true
-                },
-                {
-                    name: 'Quần jean nam',
-                    slug: 'quan-jean-nam',
-                    description: 'Quần jean nam ôm dáng thời trang',
-                    price: 499000,
-                    category: categories[1]._id,
-                    images: ['/uploads/products/quan-jean-nam-1.jpg'],
-                    stock: 50,
-                    sold: 0,
-                    isActive: true
+                    isActive: true,
+                    colors: ['Đen', 'Trắng', 'Xanh Navy'],
+                    sizes: ['S', 'M', 'L', 'XL']
                 },
                 {
                     name: 'Áo sơ mi nữ',
                     slug: 'ao-so-mi-nu',
                     description: 'Áo sơ mi nữ phong cách công sở',
                     price: 299000,
-                    category: categories[2]._id,
+                    category: categories[1]._id,
                     images: ['/uploads/products/ao-so-mi-nu-1.jpg'],
                     stock: 80,
                     sold: 0,
-                    isActive: true
+                    isActive: true,
+                    colors: ['Trắng', 'Hồng nhạt', 'Xanh da trời'],
+                    sizes: ['S', 'M', 'L']
+                },
+                {
+                    name: 'Dây chuyền bạc',
+                    slug: 'day-chuyen-bac',
+                    description: 'Dây chuyền bạc 925 thời trang',
+                    price: 499000,
+                    category: categories[2]._id,
+                    images: ['/uploads/products/day-chuyen-1.jpg'],
+                    stock: 30,
+                    sold: 0,
+                    isActive: true,
+                    colors: ['Bạc'],
+                    sizes: []
+                },
+                {
+                    name: 'Giày thể thao nam',
+                    slug: 'giay-the-thao-nam',
+                    description: 'Giày thể thao nam đa năng',
+                    price: 799000,
+                    category: categories[3]._id,
+                    images: ['/uploads/products/giay-the-thao-1.jpg'],
+                    stock: 50,
+                    sold: 0,
+                    isActive: true,
+                    colors: ['Đen', 'Trắng', 'Xám'],
+                    sizes: ['39', '40', '41', '42', '43']
                 }
             ];
 

@@ -13,11 +13,6 @@ const categorySchema = new mongoose.Schema({
         trim: true
     },
     description: String,
-    parent: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category',
-        default: null
-    },
     image: String,
     isActive: {
         type: Boolean,

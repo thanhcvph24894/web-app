@@ -13,10 +13,10 @@
                     <thead>
                         <tr>
                             <th width="5%">STT</th>
-                            <th width="20%">Tên danh mục</th>
-                            <th width="25%">Mô tả</th>
-                            <th width="15%">Danh mục cha</th>
-                            <th width="15%">Hình ảnh</th>
+                            <th>Tên</th>
+                            <th>Slug</th>
+                            <th>Mô tả</th>
+                            <th>Hình ảnh</th>
                             <th width="10%">Trạng thái</th>
                             <th width="10%">Thao tác</th>
                         </tr>
@@ -25,24 +25,23 @@
                         <% categories.forEach((category, index) => { %>
                             <tr>
                                 <td><%= index + 1 %></td>
+                                <td><%= category.name %></td>
+                                <td><%= category.slug %></td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <span class="fw-medium"><%= category.name %></span>
-                                    </div>
-                                </td>
-                                <td><%= category.description || 'Không có mô tả' %></td>
-                                <td>
-                                    <% if(category.parent) { %>
-                                        <span class="badge bg-info"><%= category.parent.name %></span>
+                                    <% if (category.description) { %>
+                                        <%= category.description.length > 50 ? 
+                                            category.description.substring(0, 50) + '...' : 
+                                            category.description %>
                                     <% } else { %>
-                                        <span class="badge bg-secondary">Danh mục gốc</span>
+                                        <em class="text-muted">Không có mô tả</em>
                                     <% } %>
                                 </td>
                                 <td>
-                                    <% if(category.image) { %>
-                                        <img src="<%= category.image %>" alt="<%= category.name %>" class="img-thumbnail" style="max-width: 50px;">
+                                    <% if (category.image) { %>
+                                        <img src="<%= category.image %>" alt="<%= category.name %>" 
+                                             style="max-width: 50px; max-height: 50px;">
                                     <% } else { %>
-                                        <span class="text-muted">Không có ảnh</span>
+                                        <span class="badge bg-secondary">Không có ảnh</span>
                                     <% } %>
                                 </td>
                                 <td>
@@ -75,6 +74,11 @@
                                 </td>
                             </tr>
                         <% }) %>
+                        <% if (categories.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="text-center">Không có danh mục nào</td>
+                        </tr>
+                        <% } %>
                     </tbody>
                 </table>
             </div>
