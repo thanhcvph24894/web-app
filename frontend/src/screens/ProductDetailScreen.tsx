@@ -164,20 +164,61 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
     }
   };
 
-  const renderColorOption = ({ item }: { item: string }) => (
-    <TouchableOpacity
-      style={[
-        styles.colorOption,
-        { backgroundColor: item.toLowerCase() },
-        selectedColor === item && styles.selectedColorOption,
-      ]}
-      onPress={() => setSelectedColor(item)}
-    >
-      {selectedColor === item && (
-        <Icon name="checkmark" size={18} color="#fff" />
-      )}
-    </TouchableOpacity>
-  );
+  const renderColorOption = ({ item }: { item: string }) => {
+    const isLightColor = item.toLowerCase() === 'trắng' || item.toLowerCase() === 'white';
+    const checkmarkColor = isLightColor ? '#000' : '#fff';
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.colorOptionContainer,
+          selectedColor === item && styles.selectedColorContainer,
+        ]}
+        onPress={() => setSelectedColor(item)}
+      >
+        <View
+          style={[
+            styles.colorOption,
+            { 
+              backgroundColor: item.toLowerCase() === 'trắng' ? '#ffffff' : 
+                              item.toLowerCase() === 'đen' ? '#000000' : 
+                              item.toLowerCase() === 'xám' ? '#888888' : 
+                              item.toLowerCase() === 'vàng' ? '#FFD700' : 
+                              item.toLowerCase() === 'đỏ' ? '#FF0000' : 
+                              item.toLowerCase() === 'xanh' ? '#0000FF' : 
+                              item.toLowerCase() === 'tím' ? '#800080' : 
+                              item.toLowerCase() === 'cam' ? '#FFA500' : 
+                              item.toLowerCase() === 'hồng' ? '#FFC0CB' : 
+                              item.toLowerCase() === 'nâu' ? '#A52A2A' : 
+                              item.toLowerCase() === 'bạc' ? '#C0C0C0' : 
+                              item.toLowerCase() === 'xanh lá' ? '#008000' : 
+                              item.toLowerCase() === 'xanh dương' ? '#0000FF' : 
+                              item.toLowerCase() === 'xanh lơ' ? '#00FFFF' : 
+                              item.toLowerCase() === 'xanh nước biển' ? '#00BFFF' : 
+                              item.toLowerCase() === 'xanh lá cây' ? '#008000' : 
+                              item.toLowerCase() === 'xanh dương nước biển' ? '#00BFFF' : 
+                              item.toLowerCase() === 'xanh lá mạch' ? '#008000' : 
+                              item.toLowerCase() === 'xanh lá cây' ? '#008000' : 
+                              item.toLowerCase() === 'hồng nhạt' ? '#FFB6C1' : 
+                              item.toLowerCase() 
+
+            },
+            selectedColor === item && styles.selectedColorOption,
+          ]}
+        >
+          {selectedColor === item && (
+            <Icon name="checkmark-sharp" size={20} color={checkmarkColor} />
+          )}
+        </View>
+        <Text style={[
+          styles.colorText, 
+          selectedColor === item && styles.selectedColorText
+        ]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderSizeOption = ({ item }: { item: string }) => (
     <TouchableOpacity
@@ -438,19 +479,38 @@ const styles = StyleSheet.create({
   optionsList: {
     paddingVertical: 8,
   },
+  colorOptionContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  selectedColorContainer: {
+    backgroundColor: 'rgba(0,0,0,0.08)',
+  },
   colorOption: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginRight: 12,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderWidth: 1.5,
+    borderColor: '#d0d0d0',
+    elevation: 2,
   },
   selectedColorOption: {
     borderWidth: 2,
     borderColor: '#000',
+  },
+  colorText: {
+    marginLeft: 6,
+    fontSize: 14,
+    color: '#333',
+  },
+  selectedColorText: {
+    fontWeight: 'bold',
   },
   sizeOption: {
     minWidth: 48,

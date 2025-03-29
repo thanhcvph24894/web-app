@@ -76,7 +76,7 @@ $(document).ready(function() {
     $('.order-status').change(function() {
         const $select = $(this);
         const orderId = $select.data('id');
-        const status = $select.val();
+        const orderStatus = $select.val();
         const originalStatus = $select.find('option:selected').text();
         const originalValue = $select.data('original-value');
 
@@ -94,7 +94,7 @@ $(document).ready(function() {
                 $.ajax({
                     url: `/orders/status/${orderId}`,
                     method: 'PATCH',
-                    data: { status },
+                    data: { orderStatus },
                     success: function(response) {
                         if (response.success) {
                             Swal.fire({
@@ -113,7 +113,7 @@ $(document).ready(function() {
                             }
 
                             // Lưu giá trị mới
-                            $select.data('original-value', status);
+                            $select.data('original-value', orderStatus);
                         } else {
                             // Reset về trạng thái cũ
                             $select.val(originalValue);
@@ -133,7 +133,7 @@ $(document).ready(function() {
         });
 
         // Lưu trạng thái hiện tại để có thể reset nếu cần
-        $select.data('original-value', status);
+        $select.data('original-value', orderStatus);
     });
 
     // Xử lý cập nhật trạng thái thanh toán

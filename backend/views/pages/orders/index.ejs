@@ -57,9 +57,9 @@
                                 <%= paymentMethodLabels[order.paymentMethod] %>
                             </td>
                             <td>
-                                <select class="form-select form-select-sm payment-status <%= (order.status === 'Đã hủy' || order.status === 'Đã giao hàng') ? 'disabled-select' : '' %>" 
+                                <select class="form-select form-select-sm payment-status <%= (order.orderStatus === 'Đã hủy' || order.orderStatus === 'Đã giao hàng') ? 'disabled-select' : '' %>" 
                                         data-id="<%= order._id %>"
-                                        <%= (order.status === 'Đã hủy' || order.status === 'Đã giao hàng') ? 'disabled' : '' %>>
+                                        <%= (order.orderStatus === 'Đã hủy' || order.orderStatus === 'Đã giao hàng') ? 'disabled' : '' %>>
                                     <option value="Chưa thanh toán" 
                                             <%= order.paymentStatus === 'Chưa thanh toán' ? 'selected' : '' %>>
                                         Chưa thanh toán
@@ -75,27 +75,27 @@
                                 </select>
                             </td>
                             <td>
-                                <select class="form-select form-select-sm order-status <%= (order.status === 'Đã hủy' || order.status === 'Đã giao hàng') ? 'disabled-select' : '' %>"
+                                <select class="form-select form-select-sm order-status <%= (order.orderStatus === 'Đã hủy' || order.orderStatus === 'Đã giao hàng') ? 'disabled-select' : '' %>"
                                         data-id="<%= order._id %>"
-                                        <%= (order.status === 'Đã hủy' || order.status === 'Đã giao hàng') ? 'disabled' : '' %>>
+                                        <%= (order.orderStatus === 'Đã hủy' || order.orderStatus === 'Đã giao hàng') ? 'disabled' : '' %>>
                                     <option value="Chờ xác nhận"
-                                            <%= order.status === 'Chờ xác nhận' ? 'selected' : '' %>>
+                                            <%= order.orderStatus === 'Chờ xác nhận' ? 'selected' : '' %>>
                                         Chờ xác nhận
                                     </option>
                                     <option value="Đã xác nhận"
-                                            <%= order.status === 'Đã xác nhận' ? 'selected' : '' %>>
+                                            <%= order.orderStatus === 'Đã xác nhận' ? 'selected' : '' %>>
                                         Đã xác nhận
                                     </option>
                                     <option value="Đang giao hàng"
-                                            <%= order.status === 'Đang giao hàng' ? 'selected' : '' %>>
+                                            <%= order.orderStatus === 'Đang giao hàng' ? 'selected' : '' %>>
                                         Đang giao hàng
                                     </option>
                                     <option value="Đã giao hàng"
-                                            <%= order.status === 'Đã giao hàng' ? 'selected' : '' %>>
+                                            <%= order.orderStatus === 'Đã giao hàng' ? 'selected' : '' %>>
                                         Đã giao hàng
                                     </option>
                                     <option value="Đã hủy"
-                                            <%= order.status === 'Đã hủy' ? 'selected' : '' %>>
+                                            <%= order.orderStatus === 'Đã hủy' ? 'selected' : '' %>>
                                         Đã hủy
                                     </option>
                                 </select>
@@ -116,7 +116,7 @@
                                 </a>
                                 <button class="btn btn-danger btn-sm delete-order" 
                                         data-id="<%= order._id %>"
-                                        <%= !['Chờ xác nhận', 'Đã hủy'].includes(order.status) ? 'disabled' : '' %>>
+                                        <%= !['Chờ xác nhận', 'Đã hủy'].includes(order.orderStatus) ? 'disabled' : '' %>>
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
