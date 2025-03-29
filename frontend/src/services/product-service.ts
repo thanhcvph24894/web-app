@@ -41,13 +41,24 @@ export interface ProductListParams {
 
 const productService = {
   getProducts: (params?: ProductListParams) => {
-    const url = new URL('products', 'http://dummy.url');
-    if (params?.page) url.searchParams.append('page', params.page.toString());
-    if (params?.limit)
-      url.searchParams.append('limit', params.limit.toString());
-    if (params?.category) url.searchParams.append('category', params.category);
+    let url = 'products';
+    const queryParams: string[] = [];
 
-    return request<ProductListResponse>(url.pathname + url.search);
+    if (params?.page) {
+      queryParams.push(`page=${params.page}`);
+    }
+    if (params?.limit) {
+      queryParams.push(`limit=${params.limit}`);
+    }
+    if (params?.category) {
+      queryParams.push(`category=${params.category}`);
+    }
+
+    if (queryParams.length > 0) {
+      url = `${url}?${queryParams.join('&')}`;
+    }
+
+    return request<ProductListResponse>(url);
   },
 
   getProductDetail: (slug: string) => {
@@ -59,14 +70,22 @@ const productService = {
   },
 
   searchProducts: (keyword: string, params?: ProductListParams) => {
-    const url = new URL('products/search', 'http://dummy.url');
-    url.searchParams.append('keyword', keyword);
-    if (params?.page) url.searchParams.append('page', params.page.toString());
-    if (params?.limit)
-      url.searchParams.append('limit', params.limit.toString());
-    if (params?.category) url.searchParams.append('category', params.category);
+    let url = 'products/search';
+    const queryParams: string[] = [`keyword=${keyword}`];
 
-    return request<ProductListResponse>(url.pathname + url.search);
+    if (params?.page) {
+      queryParams.push(`page=${params.page}`);
+    }
+    if (params?.limit) {
+      queryParams.push(`limit=${params.limit}`);
+    }
+    if (params?.category) {
+      queryParams.push(`category=${params.category}`);
+    }
+
+    url = `${url}?${queryParams.join('&')}`;
+
+    return request<ProductListResponse>(url);
   },
 };
 
