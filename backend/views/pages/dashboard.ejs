@@ -70,6 +70,7 @@
                             <div class="h5 mb-0 font-weight-bold text-gray-800">
                                 <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(stats.totalRevenue) %>
                             </div>
+                            <small class="text-muted">Từ <%= stats.completedOrdersCount %> đơn hàng đã hoàn thành</small>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
@@ -128,7 +129,7 @@
                                         <td>
                                             <% 
                                             let statusClass = '';
-                                            switch(order.status) {
+                                            switch(order.orderStatus) {
                                                 case 'Chờ xác nhận':
                                                     statusClass = 'warning';
                                                     break;
@@ -149,7 +150,7 @@
                                             }
                                             %>
                                             <span class="badge bg-<%= statusClass %>">
-                                                <%= order.status %>
+                                                <%= order.orderStatus %>
                                             </span>
                                         </td>
                                     </tr>
