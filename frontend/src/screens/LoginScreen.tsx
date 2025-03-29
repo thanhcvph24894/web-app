@@ -6,19 +6,53 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
+import { authService, setToken } from '../services';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = () => {
-    // TODO: Implement actual login logic
-    navigation.navigate('Main', { screen: 'HomeTab' });
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+      
+      console.log('Đang đăng nhập với:', { email, password });
+      
+      const response = await authService.login({ email, password });
+      
+      console.log('Kết quả đăng nhập:', response);
+      
+      if (response?.success) {
+        // Lưu token để sử dụng cho các request sau này
+        const token = response.data?.token;
+        if (token) {
+          setToken(token);
+          navigation.navigate('Main', { screen: 'HomeTab' });
+        }
+      } else {
+        setError(response?.message || 'Đăng nhập thất bại');
+      }
+    } catch (err: any) {
+      console.error('Lỗi đăng nhập:', err);
+      setError(err?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -26,6 +60,8 @@ const LoginScreen = ({ navigation }: Props) => {
       <Text style={styles.title}>Đăng nhập</Text>
 
       <View style={styles.formContainer}>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Email</Text>
           <TextInput
@@ -35,6 +71,7 @@ const LoginScreen = ({ navigation }: Props) => {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!loading}
           />
         </View>
 
@@ -46,6 +83,7 @@ const LoginScreen = ({ navigation }: Props) => {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!loading}
           />
         </View>
 
@@ -54,17 +92,26 @@ const LoginScreen = ({ navigation }: Props) => {
           onPress={() => {
             // TODO: Implement forgot password
           }}
+          disabled={loading}
         >
           <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-          <Text style={styles.loginButtonText}>Đăng nhập</Text>
+        <TouchableOpacity 
+          style={styles.loginButton} 
+          onPress={handleLogin}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.loginButtonText}>Đăng nhập</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.registerContainer}>
           <Text style={styles.registerText}>Chưa có tài khoản? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')} disabled={loading}>
             <Text style={styles.registerLink}>Đăng ký</Text>
           </TouchableOpacity>
         </View>
@@ -137,6 +184,11 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 14,
     fontWeight: '600',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
 

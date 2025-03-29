@@ -1,17 +1,59 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types/navigation';
+import React, {useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {RootStackParamList} from '../types/navigation';
+import {authService, setToken} from '../services';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
-const RegisterScreen = ({ navigation }: Props) => {
-  const [username, setUsername] = useState('');
+const RegisterScreen = ({navigation}: Props) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleRegister = () => {
-    navigation.navigate('Main', { screen: 'HomeTab' });
+  const handleRegister = async () => {
+    if (!name || !email || !password) {
+      setError('Vui lòng nhập đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const response = await authService.register({
+        name,
+        email,
+        password,
+        phone: phone || undefined,
+      });
+
+      if (response?.success) {
+        // Lưu token để sử dụng cho các request sau này
+        const token = response.data?.token;
+        if (token) {
+          setToken(token);
+          navigation.navigate('Main', {screen: 'HomeTab'});
+        }
+      } else {
+        setError(response?.message || 'Đăng ký thất bại');
+      }
+    } catch (err: any) {
+      console.error('Lỗi đăng ký:', err);
+      setError(err?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -19,14 +61,16 @@ const RegisterScreen = ({ navigation }: Props) => {
       <Text style={styles.title}>Đăng ký</Text>
 
       <View style={styles.formContainer}>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Tên đăng nhập</Text>
+          <Text style={styles.label}>Họ tên</Text>
           <TextInput
             style={styles.input}
-            placeholder="Nhập tên đăng nhập"
-            value={username}
-            onChangeText={setUsername}
-            autoCapitalize="none"
+            placeholder="Nhập họ tên của bạn"
+            value={name}
+            onChangeText={setName}
+            editable={!loading}
           />
         </View>
 
@@ -39,6 +83,7 @@ const RegisterScreen = ({ navigation }: Props) => {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            editable={!loading}
           />
         </View>
 
@@ -50,16 +95,38 @@ const RegisterScreen = ({ navigation }: Props) => {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            editable={!loading}
           />
         </View>
 
-        <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-          <Text style={styles.registerButtonText}>Đăng ký</Text>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Số điện thoại (không bắt buộc)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập số điện thoại"
+            value={phone}
+            onChangeText={setPhone}
+            keyboardType="phone-pad"
+            editable={!loading}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.registerButton}
+          onPress={handleRegister}
+          disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.registerButtonText}>Đăng ký</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.loginContainer}>
           <Text style={styles.loginText}>Đã có tài khoản? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Login')}
+            disabled={loading}>
             <Text style={styles.loginLink}>Đăng nhập</Text>
           </TouchableOpacity>
         </View>
@@ -125,6 +192,11 @@ const styles = StyleSheet.create({
     color: '#000',
     fontSize: 14,
     fontWeight: '600',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 15,
+    textAlign: 'center',
   },
 });
 

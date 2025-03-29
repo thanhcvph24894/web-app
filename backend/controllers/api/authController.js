@@ -27,17 +27,15 @@ exports.register = async (req, res) => {
             });
         }
 
-        // Mã hóa mật khẩu
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Tạo user mới
+        // Tạo user mới - password sẽ được tự động hash bởi mongoose middleware
         const user = await User.create({
             name,
             email,
-            password: hashedPassword,
+            password, // Không hash ở đây - để middleware xử lý
             phone
         });
+
+        console.log('User created with password hash:', user.password);
 
         // Tạo token
         const token = jwt.sign(
@@ -83,8 +81,12 @@ exports.login = async (req, res) => {
             });
         }
 
-        // Kiểm tra mật khẩu
-        const isMatch = await bcrypt.compare(password, user.password);
+        // Log mật khẩu đã mã hóa để debug
+        console.log('Stored hashed password:', user.password);
+        console.log('Input password:', password);
+
+        // Kiểm tra mật khẩu sử dụng phương thức comparePassword từ model
+        const isMatch = await user.comparePassword(password);
         console.log('Password match:', isMatch); // Log kết quả so sánh mật khẩu
 
         if (!isMatch) {

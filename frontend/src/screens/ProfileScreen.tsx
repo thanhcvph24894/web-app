@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, RootTabParamList } from '../types/navigation';
+import { logout } from '../services';
 
 type Props = {
   navigation: CompositeNavigationProp<
@@ -46,6 +48,29 @@ const recentOrders = [
 ];
 
 const ProfileScreen = ({ navigation }: Props) => {
+  const handleLogout = () => {
+    Alert.alert(
+      'Đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel',
+        },
+        {
+          text: 'Đăng xuất',
+          onPress: () => {
+            // Xóa token
+            logout();
+            // Chuyển đến màn hình đăng nhập
+            navigation.navigate('Login');
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -125,10 +150,7 @@ const ProfileScreen = ({ navigation }: Props) => {
         {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={() => {
-            // TODO: Handle logout
-            navigation.navigate('Login');
-          }}
+          onPress={handleLogout}
         >
           <Icon name="log-out-outline" size={24} color="#ff4444" />
           <Text style={styles.logoutText}>Đăng xuất</Text>
