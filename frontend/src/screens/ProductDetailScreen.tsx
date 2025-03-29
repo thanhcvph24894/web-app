@@ -194,7 +194,8 @@ const ProductDetailScreen = ({ navigation, route }: Props) => {
                               item.toLowerCase() === 'xanh dương' ? '#0000FF' : 
                               item.toLowerCase() === 'xanh lơ' ? '#00FFFF' : 
                               item.toLowerCase() === 'xanh nước biển' ? '#00BFFF' : 
-                              item.toLowerCase() === 'xanh lá cây' ? '#008000' : 
+                              item.toLowerCase() === 'xanh lá cây' ? '#008000' :
+                              item.toLowerCase() === 'hồng nhạt' ? '#FFB6C1' : 
                               item.toLowerCase() 
 
             },

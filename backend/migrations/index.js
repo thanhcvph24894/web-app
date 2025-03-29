@@ -133,7 +133,7 @@ const runMigrations = async () => {
                     stock: 100,
                     sold: 0,
                     isActive: true,
-                    colors: ['Đen', 'Trắng', 'Xanh Navy'],
+                    colors: ['Đen', 'Trắng', 'Xanh nước biển'],
                     sizes: ['S', 'M', 'L', 'XL']
                 },
                 {
@@ -146,7 +146,7 @@ const runMigrations = async () => {
                     stock: 80,
                     sold: 0,
                     isActive: true,
-                    colors: ['Trắng', 'Hồng nhạt', 'Xanh da trời'],
+                    colors: ['Trắng', 'Hồng nhạt', 'Xanh'],
                     sizes: ['S', 'M', 'L']
                 },
                 {
