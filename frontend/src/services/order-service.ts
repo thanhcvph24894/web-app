@@ -69,28 +69,28 @@ export interface CreateOrderData {
 const orderService = {
   // Lấy tất cả đơn hàng
   getOrders: async (page: number = 1, limit: number = 10) => {
-    return authRequest<OrdersResponse>(`v1/orders?page=${page}&limit=${limit}`);
+    return authRequest<OrdersResponse>(`orders?page=${page}&limit=${limit}`);
   },
 
   // Lấy chi tiết đơn hàng theo id
   getOrderById: async (orderId: string) => {
-    return authRequest<OrderResponse>(`v1/orders/${orderId}`);
+    return authRequest<OrderResponse>(`orders/${orderId}`);
   },
 
   // Tạo đơn hàng mới
   createOrder: async (orderData: CreateOrderData) => {
-    return authRequest<OrderResponse>('v1/orders', 'POST', orderData);
+    return authRequest<OrderResponse>('orders', 'POST', orderData);
   },
 
   // Hủy đơn hàng
   cancelOrder: async (orderId: string) => {
-    return authRequest<OrderResponse>(`v1/orders/${orderId}/cancel`, 'PUT');
+    return authRequest<OrderResponse>(`orders/${orderId}/cancel`, 'PUT');
   },
 
   // Thanh toán đơn hàng
   payOrder: async (orderId: string, paymentDetails: any) => {
     return authRequest<OrderResponse>(
-      `v1/orders/${orderId}/pay`,
+      `orders/${orderId}/pay`,
       'PUT',
       paymentDetails,
     );

@@ -288,8 +288,7 @@ const CartScreen = () => {
         <Text style={styles.emptyText}>Giỏ hàng của bạn đang trống</Text>
         <TouchableOpacity
           style={styles.shopButton}
-          // @ts-ignore
-          onPress={() => navigation.navigate('Home')}>
+          onPress={() => navigation.navigate('Main', { screen: 'HomeTab' })}>
           <Text style={styles.shopButtonText}>Tiếp tục mua sắm</Text>
         </TouchableOpacity>
       </View>

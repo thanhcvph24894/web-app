@@ -7,11 +7,15 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, CartItem } from '../types/navigation';
 import cartService, { Cart } from '../services/cart-service';
+import authService from '../services/auth-service';
+import orderService from '../services/order-service';
+import { formatCurrency } from '../utils';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Checkout'>;
 
@@ -20,24 +24,47 @@ type ShippingInfo = {
   phone: string;
   address: string;
   city: string;
+  district: string;
+  ward: string;
   note: string;
 };
 
 const CheckoutScreen = ({ navigation }: Props) => {
   const [cart, setCart] = useState<Cart | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [placing, setPlacing] = useState<boolean>(false);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     fullName: '',
     phone: '',
     address: '',
     city: '',
+    district: '',
+    ward: '',
     note: '',
   });
   const [selectedPayment, setSelectedPayment] = useState<'cod' | 'banking'>('cod');
 
   useEffect(() => {
     fetchCart();
+    fetchUserInfo();
   }, []);
+
+  const fetchUserInfo = async () => {
+    try {
+      const userInfo = await authService.getUser();
+      if (userInfo) {
+        // Cập nhật thông tin giao hàng từ dữ liệu người dùng
+        setShippingInfo(prev => ({
+          ...prev,
+          fullName: userInfo.name || prev.fullName,
+          phone: userInfo.phone || prev.phone,
+          address: userInfo.address || prev.address
+        }));
+      }
+    } catch (error) {
+      console.error('Lỗi khi lấy thông tin người dùng:', error);
+    }
+  };
 
   const fetchCart = async () => {
     setLoading(true);
@@ -86,21 +113,78 @@ const CheckoutScreen = ({ navigation }: Props) => {
   const shippingFee = 30000; // Phí ship cố định
   const total = calculateSubtotal() + shippingFee;
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!cart || !cart.items || cart.items.length === 0) {
       Alert.alert('Lỗi', 'Giỏ hàng trống, không thể đặt hàng');
       return;
     }
+
+    // Kiểm tra thông tin giao hàng
+    if (!shippingInfo.fullName || !shippingInfo.phone || !shippingInfo.address) {
+      Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ thông tin giao hàng');
+      return;
+    }
     
-    // Xử lý đặt hàng ở đây
-    console.log('Order placed:', {
-      items: cart.items,
-      shipping: shippingInfo,
-      payment: selectedPayment,
-      total,
-    });
-    // Sau khi đặt hàng thành công, chuyển về trang chủ
-    navigation.navigate('Main', { screen: 'HomeTab' });
+    // Bắt đầu quá trình đặt hàng
+    setPlacing(true);
+    
+    try {
+      const orderData = {
+        shippingAddress: {
+          fullName: shippingInfo.fullName,
+          phone: shippingInfo.phone,
+          address: shippingInfo.address,
+          city: shippingInfo.city,
+          district: shippingInfo.district,
+          ward: shippingInfo.ward,
+          note: shippingInfo.note
+        },
+        paymentMethod: selectedPayment === 'cod' ? 'COD' : 'BANKING'
+      };
+
+      const response = await orderService.createOrder(orderData);
+      
+      if (response.unauthorizedError) {
+        Alert.alert(
+          'Thông báo',
+          'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại',
+          [
+            {
+              text: 'Đăng nhập',
+              onPress: () => {
+                authService.logout();
+                navigation.navigate('Login');
+              }
+            }
+          ]
+        );
+        return;
+      }
+      
+      if (response.success) {
+        Alert.alert(
+          'Thành công',
+          'Đặt hàng thành công. Cảm ơn bạn đã mua hàng!',
+          [
+            {
+              text: 'Xem đơn hàng',
+              onPress: () => navigation.navigate('OrderHistory')
+            },
+            {
+              text: 'Trang chủ',
+              onPress: () => navigation.navigate('Main', { screen: 'HomeTab' })
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Lỗi', response.message || 'Có lỗi xảy ra khi đặt hàng');
+      }
+    } catch (error) {
+      console.error('Lỗi đặt hàng:', error);
+      Alert.alert('Lỗi', 'Không thể đặt hàng. Vui lòng thử lại sau.');
+    } finally {
+      setPlacing(false);
+    }
   };
 
   const renderInput = (
@@ -157,6 +241,8 @@ const CheckoutScreen = ({ navigation }: Props) => {
             'Nhập địa chỉ giao hàng'
           )}
           {renderInput('Thành phố', shippingInfo.city, 'city', 'Nhập thành phố')}
+          {renderInput('Quận/Huyện', shippingInfo.district, 'district', 'Nhập quận/huyện')}
+          {renderInput('Phường/Xã', shippingInfo.ward, 'ward', 'Nhập phường/xã')}
           {renderInput(
             'Ghi chú',
             shippingInfo.note,
