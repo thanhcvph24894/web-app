@@ -135,7 +135,7 @@ const HomeScreen = ({ navigation }: Props) => {
           >
             {categories.map((category, index) => (
               <TouchableOpacity 
-                key={index} 
+                key={category.id || `category-${index}`} 
                 style={[
                   styles.categoryItem,
                   (index === 0 && !selectedCategory) || (selectedCategory === category.slug) 
