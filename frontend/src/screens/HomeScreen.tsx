@@ -96,7 +96,7 @@ const HomeScreen = ({ navigation }: Props) => {
   const handleProductPress = (product: Product) => {
     // Chuyển đổi Product từ API sang Product của navigation
     const navigationProduct: NavigationProduct = {
-      id: parseInt(product.id),
+      id: parseInt(product._id || product.id),
       name: product.name,
       price: formatCurrency(product.salePrice || product.price),
       image: product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/150',
@@ -163,7 +163,7 @@ const HomeScreen = ({ navigation }: Props) => {
             {products.length > 0 ? (
               products.map((product) => (
                 <TouchableOpacity 
-                  key={product.id} 
+                  key={product._id || product.id} 
                   style={styles.productCard}
                   onPress={() => handleProductPress(product)}
                 >
@@ -176,6 +176,7 @@ const HomeScreen = ({ navigation }: Props) => {
                       style={styles.productImage}
                     />
                     <TouchableOpacity 
+                      key={`favorite-${product._id || product.id}`}
                       style={styles.favoriteButton}
                       onPress={(e) => {
                         e.stopPropagation();

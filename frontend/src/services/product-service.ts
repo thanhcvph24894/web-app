@@ -2,6 +2,7 @@ import {request, authRequest} from './api-client';
 
 export interface Product {
   id: string;
+  _id?: string;
   name: string;
   slug: string;
   description: string;
